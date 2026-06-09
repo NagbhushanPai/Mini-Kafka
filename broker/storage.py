@@ -18,10 +18,10 @@ class StorageEngine:
                 if not line.strip():
                     continue
                 record = json.loads(line)
-                if record["offset"] < start_offset:
+                payload = record.get("payload", record)
+                if payload["offset"] < start_offset:
                     continue
-                messages.append(record)
+                messages.append(payload)
                 if len(messages) >= batch_size:
                     break
         return messages
-

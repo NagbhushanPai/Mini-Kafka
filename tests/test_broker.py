@@ -1,5 +1,7 @@
 import tempfile
 import unittest
+import json
+import os
 
 from broker.broker import Broker
 from broker.exceptions import PartitionNotFoundError, TopicAlreadyExistsError, TopicNotFoundError
@@ -35,6 +37,24 @@ class MiniKafkaTests(unittest.TestCase):
         result = self.producer.send("orders", "user1", "hello")
         messages = self.consumer.poll("orders", result["partition"], 0, 10)
         self.assertEqual(messages, [{"offset": 0, "key": "user1", "value": "hello"}])
+
+    def test_persisted_record_is_versioned_ndjson(self):
+        self.broker.create_topic("orders", 3)
+        result = self.producer.send("orders", "user1", "hello")
+        log_path = os.path.join(
+            self.tmp.name,
+            "orders",
+            f"partition_{result['partition']}.log",
+        )
+
+        with open(log_path, "r", encoding="utf-8") as handle:
+            lines = [line.strip() for line in handle if line.strip()]
+
+        self.assertEqual(len(lines), 1)
+        record = json.loads(lines[0])
+        self.assertEqual(record["version"], 1)
+        self.assertEqual(record["type"], "produce")
+        self.assertEqual(record["payload"], {"offset": 0, "key": "user1", "value": "hello"})
 
     def test_topic_not_found(self):
         with self.assertRaises(TopicNotFoundError):
