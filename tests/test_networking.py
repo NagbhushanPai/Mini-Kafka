@@ -1,4 +1,7 @@
 import socket
+import json
+import logging
+import os
 import tempfile
 import threading
 import time
@@ -107,7 +110,137 @@ class NetworkingTests(unittest.TestCase):
         finally:
             client.close()
 
+    @unittest.skipUnless(os.environ.get("RUN_STRESS_TEST") == "1", "Set RUN_STRESS_TEST=1 to run the stress test")
+    def test_stress_10_producers_5_consumers_50k_messages_with_logs(self):
+        logger = logging.getLogger("mini_kafka.stress")
+        logger.setLevel(logging.INFO)
+        logger.propagate = False
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+        logger.handlers = [handler]
+
+        total_messages = 50000
+        producer_threads = 10
+        consumer_threads = 5
+        partitions = 8
+        produced_ranges = []
+        seen_offsets = {}
+        seen_lock = threading.Lock()
+
+        client = KafkaClient(port=self.port)
+        try:
+            logger.info("Creating stress topic")
+            response = client.create_topic("stress", partitions)
+            self.assertEqual(response["status"], "success")
+        finally:
+            client.close()
+
+        def producer_worker(index):
+            start = (total_messages * index) // producer_threads
+            end = (total_messages * (index + 1)) // producer_threads
+            produced_ranges.append((index, start, end))
+            logger.info("Producer %s handling range [%s, %s)", index, start, end)
+            producer_client = KafkaClient(port=self.port)
+            try:
+                for value_index in range(start, end):
+                    resp = producer_client.produce("stress", f"key-{value_index}", f"value-{value_index}")
+                    if resp.get("status") != "success":
+                        raise AssertionError(resp)
+                logger.info("Producer %s completed %s messages", index, end - start)
+            finally:
+                producer_client.close()
+
+        def consumer_worker(index, partition_ids):
+            logger.info("Consumer %s handling partitions %s", index, partition_ids)
+            consumer_client = KafkaClient(port=self.port)
+            try:
+                for partition_id in partition_ids:
+                    offset = 0
+                    partition_seen = seen_offsets.setdefault(partition_id, set())
+                    while True:
+                        resp = consumer_client.consume("stress", partition_id, offset, 250)
+                        if resp.get("status") != "success":
+                            raise AssertionError(resp)
+                        messages = resp["messages"]
+                        if not messages:
+                            break
+                        with seen_lock:
+                            for message in messages:
+                                if message["offset"] in partition_seen:
+                                    raise AssertionError(
+                                        f"duplicate offset in partition {partition_id}: {message['offset']}"
+                                    )
+                                partition_seen.add(message["offset"])
+                        logger.info(
+                            "Consumer %s read partition=%s batch=%s next_offset=%s",
+                            index,
+                            partition_id,
+                            len(messages),
+                            messages[-1]["offset"] + 1,
+                        )
+                        offset = messages[-1]["offset"] + 1
+                logger.info("Consumer %s completed", index)
+            finally:
+                consumer_client.close()
+
+        producer_threads_list = [
+            threading.Thread(target=producer_worker, args=(index,)) for index in range(producer_threads)
+        ]
+        start_time = time.time()
+        logger.info("Starting %s producer threads", producer_threads)
+        for thread in producer_threads_list:
+            thread.start()
+        for thread in producer_threads_list:
+            thread.join()
+        logger.info("All producers finished in %.2fs", time.time() - start_time)
+
+        for partition_id in range(partitions):
+            path = os.path.join(self.tmp.name, "stress", f"partition_{partition_id}.log")
+            self.assertTrue(os.path.exists(path), path)
+            with open(path, "r", encoding="utf-8") as handle:
+                for line in handle:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    record = json.loads(line)
+                    self.assertEqual(record["version"], 1)
+                    self.assertEqual(record["type"], "produce")
+                    self.assertIn("payload", record)
+
+        partition_assignments = [list(range(i, partitions, consumer_threads)) for i in range(consumer_threads)]
+        consumer_threads_list = [
+            threading.Thread(target=consumer_worker, args=(index, partition_ids))
+            for index, partition_ids in enumerate(partition_assignments)
+        ]
+        logger.info("Starting %s consumer threads", consumer_threads)
+        for thread in consumer_threads_list:
+            thread.start()
+        for thread in consumer_threads_list:
+            thread.join()
+        logger.info("All consumers finished")
+
+        total_read = sum(len(values) for values in seen_offsets.values())
+        self.assertEqual(total_read, total_messages)
+
+        self.server.stop()
+        self.thread.join(timeout=1)
+        restarted = BrokerServer(port=self.port, data_dir=self.tmp.name)
+        restarted_thread = threading.Thread(target=restarted.start, daemon=True)
+        restarted_thread.start()
+        time.sleep(0.2)
+        restarted_client = KafkaClient(port=self.port)
+        try:
+            logger.info("Verifying restart recovery")
+            response = restarted_client.consume("stress", 0, 0, 5)
+            self.assertEqual(response["status"], "success")
+            self.assertTrue(response["messages"])
+        finally:
+            restarted_client.close()
+            restarted.stop()
+            restarted_thread.join(timeout=1)
+
+        logger.info("Stress test complete: produced=%s consumed=%s", total_messages, total_read)
+
 
 if __name__ == "__main__":
     unittest.main()
-
