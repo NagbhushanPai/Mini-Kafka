@@ -42,3 +42,50 @@ class KafkaClient:
             }
         )
 
+    def join_group(self, group_id, consumer_id, topic):
+        return self._request(
+            {
+                "version": 1,
+                "type": "join_group",
+                "group_id": group_id,
+                "consumer_id": consumer_id,
+                "topic": topic,
+            }
+        )
+
+    def leave_group(self, group_id, consumer_id):
+        return self._request({"version": 1, "type": "leave_group", "group_id": group_id, "consumer_id": consumer_id})
+
+    def commit_offset(self, group_id, topic, partition, offset):
+        return self._request(
+            {
+                "version": 1,
+                "type": "commit_offset",
+                "group_id": group_id,
+                "topic": topic,
+                "partition": partition,
+                "offset": offset,
+            }
+        )
+
+    def get_offset(self, group_id, topic, partition):
+        return self._request(
+            {
+                "version": 1,
+                "type": "get_offset",
+                "group_id": group_id,
+                "topic": topic,
+                "partition": partition,
+            }
+        )
+
+    def consume_assigned(self, group_id, consumer_id, batch_size):
+        return self._request(
+            {
+                "version": 1,
+                "type": "consume_assigned",
+                "group_id": group_id,
+                "consumer_id": consumer_id,
+                "batch_size": batch_size,
+            }
+        )

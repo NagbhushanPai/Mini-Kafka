@@ -1,15 +1,20 @@
 import os
 
 from .exceptions import PartitionNotFoundError, TopicAlreadyExistsError, TopicNotFoundError
+from .group_manager import GroupManager
+from .offset_manager import OffsetManager
 from .topic import Topic
 
 
 class Broker:
-    def __init__(self, data_dir="data"):
+    def __init__(self, data_dir="data", offsets_dir=None):
         self.data_dir = data_dir
         os.makedirs(self.data_dir, exist_ok=True)
+        self.offsets_dir = offsets_dir or os.path.join(os.path.dirname(os.path.abspath(self.data_dir)), "offsets")
         self.topics = {}
         self._load_topics()
+        self.group_manager = GroupManager(self, offsets_dir=self.offsets_dir)
+        self.offset_manager = OffsetManager(self.group_manager)
 
     def _load_topics(self):
         for name in os.listdir(self.data_dir):
@@ -48,3 +53,17 @@ class Broker:
             raise PartitionNotFoundError(f"Partition '{partition}' not found")
         return topic_obj.partitions[partition].read(offset, batch_size)
 
+    def join_group(self, group_id, consumer_id, topic):
+        return self.group_manager.join_group(group_id, consumer_id, topic)
+
+    def leave_group(self, group_id, consumer_id):
+        return self.group_manager.leave_group(group_id, consumer_id)
+
+    def commit_offset(self, group_id, topic, partition, offset):
+        return self.offset_manager.commit_offset(group_id, topic, partition, offset)
+
+    def get_offset(self, group_id, topic, partition):
+        return self.offset_manager.get_offset(group_id, topic, partition)
+
+    def consume_assigned(self, group_id, consumer_id, batch_size):
+        return self.group_manager.consume_assigned(group_id, consumer_id, batch_size)

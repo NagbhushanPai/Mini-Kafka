@@ -1,0 +1,14 @@
+{
+  "orders-processors": {
+    "assignments": {
+      "0": "consumer-a",
+      "1": "consumer-a",
+      "2": "consumer-a"
+    },
+    "members": [
+      "consumer-a"
+    ],
+    "offsets": {},
+    "topic": "orders"
+  }
+}

@@ -8,10 +8,10 @@ from .request_handler import RequestHandler
 
 
 class BrokerServer:
-    def __init__(self, host="localhost", port=9092, data_dir="data"):
+    def __init__(self, host="localhost", port=9092, data_dir="data", offsets_dir=None):
         self.host = host
         self.port = port
-        self.broker = Broker(data_dir=data_dir)
+        self.broker = Broker(data_dir=data_dir, offsets_dir=offsets_dir)
         self.handler = RequestHandler(self.broker)
         self._server_socket = None
         self._stop_event = threading.Event()
@@ -44,4 +44,3 @@ class BrokerServer:
                     break
                 response = self.handler.handle(request)
                 send_json(client_socket, response)
-

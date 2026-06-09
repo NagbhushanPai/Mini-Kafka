@@ -100,15 +100,62 @@ class NetworkingTests(unittest.TestCase):
     def test_producer_and_consumer_use_tcp_client(self):
         client = KafkaClient(port=self.port)
         producer = Producer(client)
-        consumer = Consumer(client)
+        consumer = Consumer(client, group_id="orders-processors", consumer_id="consumer-a", topic="orders")
         try:
             client.create_topic("orders", 3)
+            join_response = consumer.join_group()
+            self.assertEqual(join_response["status"], "success")
             result = producer.send("orders", "user1", "hello")
             self.assertEqual(result["status"], "success")
-            messages = consumer.poll("orders", result["partition"], 0, 10)
-            self.assertEqual(messages["messages"][0]["value"], "hello")
+            messages = consumer.poll(batch_size=10)
+            self.assertEqual(messages["status"], "success")
+            self.assertTrue(any(record["value"] == "hello" for record in messages["records"]))
         finally:
             client.close()
+
+    def test_consumer_group_join_commit_and_restart_recovery(self):
+        client = KafkaClient(port=self.port)
+        consumer = Consumer(client, group_id="orders-processors", consumer_id="consumer-a", topic="orders")
+        committed_partition = None
+        committed_offset = None
+        try:
+            self.assertEqual(client.create_topic("orders", 3)["status"], "success")
+            self.assertEqual(consumer.join_group()["status"], "success")
+            self.assertEqual(client.produce("orders", "user1", "hello")["status"], "success")
+            records = consumer.poll(batch_size=10)["records"]
+            self.assertTrue(records)
+            committed_partition = records[0]["partition"]
+            committed_offset = records[0]["offset"] + 1
+            committed = client.commit_offset("orders-processors", "orders", committed_partition, committed_offset)
+            self.assertEqual(committed["status"], "success")
+            offset = client.get_offset("orders-processors", "orders", committed_partition)
+            self.assertEqual(offset["offset"], committed_offset)
+        finally:
+            client.close()
+
+        self.server.stop()
+        self.thread.join(timeout=1)
+
+        restarted = BrokerServer(port=self.port, data_dir=self.tmp.name)
+        restarted_thread = threading.Thread(target=restarted.start, daemon=True)
+        restarted_thread.start()
+        time.sleep(0.2)
+
+        client = KafkaClient(port=self.port)
+        consumer = Consumer(client, group_id="orders-processors", consumer_id="consumer-a", topic="orders")
+        try:
+            self.assertEqual(consumer.join_group()["status"], "success")
+            offset = client.get_offset("orders-processors", "orders", committed_partition)
+            self.assertEqual(offset["status"], "success")
+            self.assertEqual(offset["offset"], committed_offset)
+        finally:
+            try:
+                consumer.leave_group()
+            except Exception:
+                pass
+            client.close()
+            restarted.stop()
+            restarted_thread.join(timeout=1)
 
     @unittest.skipUnless(os.environ.get("RUN_STRESS_TEST") == "1", "Set RUN_STRESS_TEST=1 to run the stress test")
     def test_stress_10_producers_5_consumers_50k_messages_with_logs(self):
@@ -240,6 +287,36 @@ class NetworkingTests(unittest.TestCase):
             restarted_thread.join(timeout=1)
 
         logger.info("Stress test complete: produced=%s consumed=%s", total_messages, total_read)
+
+    def test_consumer_groups_multiple_members_round_robin_assignment(self):
+        client_a = KafkaClient(port=self.port)
+        client_b = KafkaClient(port=self.port)
+        client_c = KafkaClient(port=self.port)
+        consumer_a = Consumer(client_a, group_id="orders-processors", consumer_id="consumer-a", topic="orders")
+        consumer_b = Consumer(client_b, group_id="orders-processors", consumer_id="consumer-b", topic="orders")
+        consumer_c = Consumer(client_c, group_id="orders-processors", consumer_id="consumer-c", topic="orders")
+        try:
+            self.assertEqual(client_a.create_topic("orders", 4)["status"], "success")
+            self.assertEqual(consumer_a.join_group()["status"], "success")
+            self.assertEqual(consumer_b.join_group()["status"], "success")
+            self.assertEqual(consumer_c.join_group()["status"], "success")
+
+            assigned_a = consumer_a.join_group()["assigned_partitions"]
+            assigned_b = consumer_b.join_group()["assigned_partitions"]
+            assigned_c = consumer_c.join_group()["assigned_partitions"]
+
+            all_assigned = sorted(assigned_a + assigned_b + assigned_c)
+            self.assertEqual(all_assigned, [0, 1, 2, 3])
+            self.assertEqual(len(set(all_assigned)), 4)
+        finally:
+            for consumer in (consumer_a, consumer_b, consumer_c):
+                try:
+                    consumer.leave_group()
+                except Exception:
+                    pass
+            client_a.close()
+            client_b.close()
+            client_c.close()
 
 
 if __name__ == "__main__":

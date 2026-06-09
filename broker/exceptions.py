@@ -13,3 +13,18 @@ class PartitionNotFoundError(MiniKafkaError):
 class TopicAlreadyExistsError(MiniKafkaError):
     pass
 
+
+class GroupNotFound(MiniKafkaError):
+    pass
+
+
+class ConsumerNotFound(MiniKafkaError):
+    pass
+
+
+class OffsetNotFound(MiniKafkaError):
+    pass
+
+
+class AssignmentNotFound(MiniKafkaError):
+    pass

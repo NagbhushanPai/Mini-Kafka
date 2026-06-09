@@ -1,4 +1,11 @@
-from .exceptions import PartitionNotFoundError, TopicAlreadyExistsError, TopicNotFoundError
+from .exceptions import (
+    AssignmentNotFound,
+    ConsumerNotFound,
+    GroupNotFound,
+    PartitionNotFoundError,
+    TopicAlreadyExistsError,
+    TopicNotFoundError,
+)
 
 
 class RequestHandler:
@@ -33,6 +40,29 @@ class RequestHandler:
                 )
                 return {"status": "success", "messages": messages}
 
+            if request_type == "join_group":
+                assigned = self.broker.join_group(request["group_id"], request["consumer_id"], request["topic"])
+                return {"status": "success", "assigned_partitions": assigned}
+
+            if request_type == "leave_group":
+                return self.broker.leave_group(request["group_id"], request["consumer_id"])
+
+            if request_type == "commit_offset":
+                return self.broker.commit_offset(
+                    request["group_id"],
+                    request["topic"],
+                    request["partition"],
+                    request["offset"],
+                )
+
+            if request_type == "get_offset":
+                result = self.broker.get_offset(request["group_id"], request["topic"], request["partition"])
+                return result
+
+            if request_type == "consume_assigned":
+                result = self.broker.consume_assigned(request["group_id"], request["consumer_id"], request["batch_size"])
+                return result
+
             return self._error("InvalidRequest", "Unknown request type")
         except KeyError:
             return self._error("InvalidRequest", "Missing required fields")
@@ -42,6 +72,12 @@ class RequestHandler:
             return self._error("PartitionNotFound", str(exc))
         except TopicAlreadyExistsError as exc:
             return self._error("TopicAlreadyExists", str(exc))
+        except GroupNotFound as exc:
+            return self._error("GroupNotFound", str(exc))
+        except ConsumerNotFound as exc:
+            return self._error("ConsumerNotFound", str(exc))
+        except AssignmentNotFound as exc:
+            return self._error("AssignmentNotFound", str(exc))
         except ValueError as exc:
             return self._error("InvalidRequest", str(exc))
         except Exception as exc:  # pragma: no cover - defensive fallback
@@ -49,4 +85,3 @@ class RequestHandler:
 
     def _error(self, error, message):
         return {"status": "error", "error": error, "message": message}
-
