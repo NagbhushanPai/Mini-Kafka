@@ -89,3 +89,6 @@ class KafkaClient:
                 "batch_size": batch_size,
             }
         )
+
+    def metrics(self):
+        return self._request({"version": 1, "type": "metrics"})

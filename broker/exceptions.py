@@ -28,3 +28,7 @@ class OffsetNotFound(MiniKafkaError):
 
 class AssignmentNotFound(MiniKafkaError):
     pass
+
+
+class OffsetNotFound(MiniKafkaError):
+    pass

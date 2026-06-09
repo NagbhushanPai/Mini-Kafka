@@ -63,6 +63,9 @@ class RequestHandler:
                 result = self.broker.consume_assigned(request["group_id"], request["consumer_id"], request["batch_size"])
                 return result
 
+            if request_type == "metrics":
+                return self.broker.metrics()
+
             return self._error("InvalidRequest", "Unknown request type")
         except KeyError:
             return self._error("InvalidRequest", "Missing required fields")

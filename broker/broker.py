@@ -67,3 +67,29 @@ class Broker:
 
     def consume_assigned(self, group_id, consumer_id, batch_size):
         return self.group_manager.consume_assigned(group_id, consumer_id, batch_size)
+
+    def metrics(self):
+        topics = len(self.topics)
+        partitions = sum(len(topic.partitions) for topic in self.topics.values())
+        active_groups = len(self.group_manager.groups)
+        active_consumers = sum(len(group["members"]) for group in self.group_manager.groups.values())
+        messages_stored = 0
+        partition_offsets = {}
+        for topic in self.topics.values():
+            partition_offsets[topic.name] = {}
+            for partition in topic.partitions:
+                messages_stored += len(partition.read(0, 10**9))
+                partition_offsets[topic.name][partition.partition_id] = partition.next_offset
+        committed_offsets = {}
+        for group_id, group in self.group_manager.groups.items():
+            committed_offsets[group_id] = dict(group["offsets"])
+        return {
+            "status": "success",
+            "topics": topics,
+            "partitions": partitions,
+            "active_groups": active_groups,
+            "active_consumers": active_consumers,
+            "messages_stored": messages_stored,
+            "partition_offsets": partition_offsets,
+            "committed_offsets": committed_offsets,
+        }
