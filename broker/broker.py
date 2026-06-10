@@ -7,13 +7,18 @@ from .topic import Topic
 
 
 class Broker:
-    def __init__(self, data_dir="data", offsets_dir=None):
+    def __init__(self, data_dir="data", offsets_dir=None, heartbeat_timeout=5.0, health_check_interval=2.0):
         self.data_dir = data_dir
         os.makedirs(self.data_dir, exist_ok=True)
         self.offsets_dir = offsets_dir or os.path.join(os.path.dirname(os.path.abspath(self.data_dir)), "offsets")
         self.topics = {}
         self._load_topics()
-        self.group_manager = GroupManager(self, offsets_dir=self.offsets_dir)
+        self.group_manager = GroupManager(
+            self,
+            offsets_dir=self.offsets_dir,
+            heartbeat_timeout=heartbeat_timeout,
+            health_check_interval=health_check_interval,
+        )
         self.offset_manager = OffsetManager(self.group_manager)
 
     def _load_topics(self):
@@ -75,6 +80,7 @@ class Broker:
         return self.group_manager.group_state(group_id)
 
     def metrics(self):
+        self.group_manager.scan_for_dead_consumers()
         topics = len(self.topics)
         partitions = sum(len(topic.partitions) for topic in self.topics.values())
         active_groups = len(self.group_manager.groups)
@@ -95,6 +101,7 @@ class Broker:
             "partitions": partitions,
             "active_groups": active_groups,
             "active_consumers": active_consumers,
+            "dead_consumers_detected": self.group_manager.dead_consumers_detected,
             "messages_stored": messages_stored,
             "partition_offsets": partition_offsets,
             "committed_offsets": committed_offsets,

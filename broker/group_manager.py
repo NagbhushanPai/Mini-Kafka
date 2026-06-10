@@ -1,19 +1,31 @@
 import json
 import os
 import time
+import threading
 from threading import Lock
 
 from .exceptions import AssignmentNotFound, ConsumerNotFound, GroupNotFound, TopicNotFoundError
 
 
 class GroupManager:
-    def __init__(self, broker, offsets_dir="offsets", offsets_file="consumer_offsets.json", heartbeat_timeout=5.0):
+    def __init__(
+        self,
+        broker,
+        offsets_dir="offsets",
+        offsets_file="consumer_offsets.json",
+        heartbeat_timeout=5.0,
+        health_check_interval=2.0,
+    ):
         self.broker = broker
         self.offsets_dir = offsets_dir
         self.offsets_file = os.path.join(offsets_dir, offsets_file)
         self.heartbeat_timeout = heartbeat_timeout
+        self.health_check_interval = health_check_interval
         self.lock = Lock()
         self.groups = {}
+        self.dead_consumers_detected = 0
+        self._health_stop = threading.Event()
+        self._health_thread = None
         self._load_offsets()
 
     def _load_offsets(self):
@@ -39,6 +51,23 @@ class GroupManager:
                     for consumer_id in members
                 },
             }
+
+    def start_health_monitor(self):
+        if self._health_thread and self._health_thread.is_alive():
+            return
+        self._health_stop.clear()
+        self._health_thread = threading.Thread(target=self._health_worker, daemon=True)
+        self._health_thread.start()
+
+    def stop_health_monitor(self):
+        self._health_stop.set()
+        thread = self._health_thread
+        if thread and thread.is_alive():
+            thread.join(timeout=self.health_check_interval + 1)
+
+    def _health_worker(self):
+        while not self._health_stop.wait(self.health_check_interval):
+            self.scan_for_dead_consumers()
 
     def _persist(self):
         os.makedirs(self.offsets_dir, exist_ok=True)
@@ -69,16 +98,27 @@ class GroupManager:
             for partition, owner in list(group["assignments"].items()):
                 if owner == consumer_id:
                     del group["assignments"][partition]
+            self.dead_consumers_detected += 1
         return True
 
     def _cleanup_dead_groups(self):
+        changed = False
         for group_id in list(self.groups.keys()):
             group = self.groups[group_id]
             if self._remove_dead_members(group):
+                changed = True
                 if not group["members"]:
                     del self.groups[group_id]
                 else:
                     self._rebalance(group_id)
+        return changed
+
+    def scan_for_dead_consumers(self):
+        with self.lock:
+            changed = self._cleanup_dead_groups()
+            if changed:
+                self._persist()
+            return changed
 
     def join_group(self, group_id, consumer_id, topic):
         with self.lock:

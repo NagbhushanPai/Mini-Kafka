@@ -3,13 +3,15 @@ import time
 
 
 class Consumer:
-    heartbeat_interval = 1.0
+    heartbeat_interval = 5.0
 
-    def __init__(self, client, group_id, consumer_id, topic):
+    def __init__(self, client, group_id, consumer_id, topic, heartbeat_interval=None):
         self.client = client
         self.group_id = group_id
         self.consumer_id = consumer_id
         self.topic = topic
+        if heartbeat_interval is not None:
+            self.heartbeat_interval = heartbeat_interval
         self._heartbeat_stop = threading.Event()
         self._heartbeat_thread = None
 

@@ -8,15 +8,29 @@ from .request_handler import RequestHandler
 
 
 class BrokerServer:
-    def __init__(self, host="localhost", port=9092, data_dir="data", offsets_dir=None):
+    def __init__(
+        self,
+        host="localhost",
+        port=9092,
+        data_dir="data",
+        offsets_dir=None,
+        heartbeat_timeout=5.0,
+        health_check_interval=2.0,
+    ):
         self.host = host
         self.port = port
-        self.broker = Broker(data_dir=data_dir, offsets_dir=offsets_dir)
+        self.broker = Broker(
+            data_dir=data_dir,
+            offsets_dir=offsets_dir,
+            heartbeat_timeout=heartbeat_timeout,
+            health_check_interval=health_check_interval,
+        )
         self.handler = RequestHandler(self.broker)
         self._server_socket = None
         self._stop_event = threading.Event()
 
     def start(self):
+        self.broker.group_manager.start_health_monitor()
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._server_socket.bind((self.host, self.port))
@@ -33,6 +47,7 @@ class BrokerServer:
 
     def stop(self):
         self._stop_event.set()
+        self.broker.group_manager.stop_health_monitor()
         if self._server_socket is not None:
             self._server_socket.close()
 

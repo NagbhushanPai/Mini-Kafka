@@ -14,9 +14,50 @@ from producer.producer import Producer
 
 
 def _find_free_port():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("localhost", 0))
-        return sock.getsockname()[1]
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind(("localhost", 0))
+            return sock.getsockname()[1]
+
+
+class RecordingClient:
+    def __init__(self):
+        self.heartbeats = []
+
+    def join_group(self, group_id, consumer_id, topic):
+        return {"status": "success", "assigned_partitions": []}
+
+    def leave_group(self, group_id, consumer_id):
+        return {"status": "success"}
+
+    def consume_assigned(self, group_id, consumer_id, batch_size):
+        return {"status": "success", "records": []}
+
+    def heartbeat(self, group_id, consumer_id):
+        self.heartbeats.append((group_id, consumer_id, time.time()))
+        return {"status": "success"}
+
+
+class FastBrokerTestCase(unittest.TestCase):
+    heartbeat_timeout = 0.35
+    health_check_interval = 0.05
+
+    def start_server(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.port = _find_free_port()
+        self.server = BrokerServer(
+            port=self.port,
+            data_dir=self.tmp.name,
+            heartbeat_timeout=self.heartbeat_timeout,
+            health_check_interval=self.health_check_interval,
+        )
+        self.thread = threading.Thread(target=self.server.start, daemon=True)
+        self.thread.start()
+        time.sleep(0.2)
+
+    def stop_server(self):
+        self.server.stop()
+        self.thread.join(timeout=1)
+        self.tmp.cleanup()
 
 
 class NetworkingTests(unittest.TestCase):
@@ -317,6 +358,79 @@ class NetworkingTests(unittest.TestCase):
             client_a.close()
             client_b.close()
             client_c.close()
+
+    def test_consumer_sends_automatic_heartbeats(self):
+        client = RecordingClient()
+        consumer = Consumer(client, group_id="orders-processors", consumer_id="consumer-a", topic="orders", heartbeat_interval=0.05)
+        try:
+            consumer.join_group()
+            time.sleep(0.16)
+            self.assertGreaterEqual(len(client.heartbeats), 2)
+            self.assertTrue(all(item[:2] == ("orders-processors", "consumer-a") for item in client.heartbeats))
+        finally:
+            consumer.leave_group()
+
+
+class HeartbeatTimeoutTests(FastBrokerTestCase):
+    def setUp(self):
+        self.start_server()
+
+    def tearDown(self):
+        self.stop_server()
+
+    def test_dead_consumer_removed_and_rebalanced_automatically(self):
+        client_a = KafkaClient(port=self.port)
+        client_b = KafkaClient(port=self.port)
+        consumer_a = Consumer(client_a, group_id="orders-processors", consumer_id="consumer-a", topic="orders", heartbeat_interval=0.05)
+        consumer_b = Consumer(client_b, group_id="orders-processors", consumer_id="consumer-b", topic="orders", heartbeat_interval=0.05)
+        try:
+            self.assertEqual(client_a.create_topic("orders", 4)["status"], "success")
+            self.assertEqual(consumer_a.join_group()["status"], "success")
+            self.assertEqual(consumer_b.join_group()["status"], "success")
+
+            initial_state = client_a.group_state("orders-processors")
+            self.assertEqual(sorted(initial_state["members"]), ["consumer-a", "consumer-b"])
+
+            consumer_b._stop_heartbeat_loop()
+            time.sleep(self.heartbeat_timeout + self.health_check_interval + 0.3)
+
+            state = client_a.group_state("orders-processors")
+            self.assertEqual(state["members"], ["consumer-a"])
+            self.assertTrue(all(owner == "consumer-a" for owner in state["assignments"].values()))
+
+            metrics = client_a.metrics()
+            self.assertGreaterEqual(metrics["active_consumers"], 1)
+            self.assertGreaterEqual(metrics["dead_consumers_detected"], 1)
+        finally:
+            try:
+                consumer_a.leave_group()
+            except Exception:
+                pass
+            try:
+                consumer_b.leave_group()
+            except Exception:
+                pass
+            client_a.close()
+            client_b.close()
+
+    def test_group_state_query_reflects_members_and_assignments(self):
+        client = KafkaClient(port=self.port)
+        consumer = Consumer(client, group_id="orders-processors", consumer_id="consumer-a", topic="orders", heartbeat_interval=0.05)
+        try:
+            self.assertEqual(client.create_topic("orders", 2)["status"], "success")
+            self.assertEqual(consumer.join_group()["status"], "success")
+            state = client.group_state("orders-processors")
+            self.assertEqual(state["status"], "success")
+            self.assertEqual(state["topic"], "orders")
+            self.assertEqual(state["members"], ["consumer-a"])
+            self.assertEqual(sorted(state["assignments"].keys()), ["0", "1"])
+            self.assertTrue(all(owner == "consumer-a" for owner in state["assignments"].values()))
+        finally:
+            try:
+                consumer.leave_group()
+            except Exception:
+                pass
+            client.close()
 
 
 if __name__ == "__main__":
