@@ -1,0 +1,55 @@
+{
+  "avg_e2e_latency_ms": 102259.31303498171,
+  "avg_producer_latency_ms": 4.003921924001333,
+  "broker_metrics": {
+    "active_consumers": 0,
+    "active_groups": 0,
+    "committed_offsets": {},
+    "dead_consumers_detected": 0,
+    "messages_stored": 60000,
+    "partition_offsets": {
+      "benchmark-baseline": {
+        "0": 2475,
+        "1": 2484,
+        "2": 2542,
+        "3": 2499
+      },
+      "benchmark-moderate": {
+        "0": 6216,
+        "1": 6212,
+        "2": 6220,
+        "3": 6091,
+        "4": 6358,
+        "5": 6203,
+        "6": 6267,
+        "7": 6433
+      }
+    },
+    "partitions": 12,
+    "status": "success",
+    "topics": 2
+  },
+  "consumer_lag": 6433,
+  "duration_seconds": 465.82395929999984,
+  "max_e2e_latency_ms": 416900.8353,
+  "max_producer_latency_ms": 53.19549999967421,
+  "messages_consumed": 50009,
+  "messages_produced": 50000,
+  "p50_e2e_latency_ms": 41913.6133,
+  "p50_producer_latency_ms": 3.4125000001949957,
+  "p95_e2e_latency_ms": 344143.6732,
+  "p95_producer_latency_ms": 7.056000000375207,
+  "p99_e2e_latency_ms": 374308.3267,
+  "p99_producer_latency_ms": 11.433300000135205,
+  "partition_counts": {
+    "0": 6216,
+    "1": 6212,
+    "2": 6220,
+    "3": 6091,
+    "4": 6358,
+    "5": 6203,
+    "6": 6267,
+    "7": 6433
+  },
+  "throughput": 107.33668589124461
+}

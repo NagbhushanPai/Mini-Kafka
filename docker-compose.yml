@@ -1,0 +1,10 @@
+services:
+  broker:
+    build: .
+    command: ["python", "-m", "broker"]
+    ports:
+      - "9092:9092"
+    volumes:
+      - ./data:/app/data
+      - ./offsets:/app/offsets
+

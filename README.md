@@ -1,301 +1,148 @@
-# Mini Kafka
+# MiniKafka
 
-A lightweight event streaming platform inspired by Apache Kafka, built from scratch to understand distributed systems fundamentals such as event streaming, topic partitioning, log-based storage, offset management, and concurrent consumer processing.
+MiniKafka is a from-scratch, Kafka-inspired event streaming system built in Python. It demonstrates the core mechanics behind modern stream processing systems: topic partitioning, append-only storage, consumer groups, offset management, heartbeats, automatic rebalance, and benchmark-driven validation.
 
 ## Overview
 
-Mini Kafka is a simplified implementation of an event streaming system that follows the producer-consumer architecture. The project focuses on core Kafka concepts rather than production-scale distributed deployment.
+The goal of this project is to show how a broker can:
 
-### Key Concepts Implemented
-
-* Producer-Consumer Architecture
-* Topic-Based Messaging
-* Topic Partitioning
-* Append-Only Log Storage
-* Offset Tracking
-* Consumer Groups
-* Concurrent Consumer Processing
-* Message Replay
-* Fault Recovery
-* Performance Benchmarking
-
----
-
-## Architecture
-
-```text
-+-----------+
-| Producer  |
-+-----------+
-      |
-      v
-+----------------+
-| Mini Kafka     |
-| Broker         |
-+----------------+
-      |
-      +--------------------------+
-      |                          |
-      v                          v
-
-+-------------+          +-------------+
-| Partition 0 |          | Partition 1 |
-+-------------+          +-------------+
-      |                          |
-      v                          v
-
- Append-only Logs        Append-only Logs
-
-      |
-      v
-
-+-----------+
-| Consumer  |
-+-----------+
-```
-
----
+- accept producer and consumer traffic over TCP
+- store records in durable partition logs
+- balance work across consumer groups
+- recover progress through offsets
+- detect dead consumers automatically
+- expose metrics and benchmark evidence for interviews
 
 ## Features
 
-### Event Production
+- Topics and partitions
+- Append-only log storage
+- Consumer groups and offset commits
+- Automatic heartbeats and timeout-based rebalance
+- Benchmark runner with reproducible scenarios
+- Dockerized broker startup
+- Recruiter-friendly dashboard
+- Example applications for common streaming use cases
 
-Publish messages to topics through producers.
+## Architecture
 
-```python
-producer.send(
-    topic="orders",
-    message="Order Created"
-)
-```
+See the diagram set in [docs/diagrams](docs/diagrams/).
 
-### Topic Partitioning
-
-Messages are distributed across partitions using a partitioning strategy.
-
-```python
-partition = hash(key) % num_partitions
-```
-
-Benefits:
-
-* Improved scalability
-* Parallel processing
-* Ordered processing per key
-
-### Log-Based Storage
-
-Messages are stored in append-only logs.
+High-level flow:
 
 ```text
-offset,message
-
-0,Order Created
-1,Payment Received
-2,Order Shipped
+Producer -> TCP -> Broker Server -> Broker -> Topic -> Partition -> Storage -> Consumer
 ```
 
-### Offset Management
-
-Consumers track their progress using offsets.
-
-```json
-{
-  "consumer_1": {
-    "orders-0": 15
-  }
-}
-```
-
-### Replay Capability
-
-Consumers can reprocess historical messages.
-
-```python
-consumer.seek(0)
-```
-
-### Concurrent Consumers
-
-Multiple consumers can process messages simultaneously using multi-threading.
-
-```text
-Partition 0 -> Consumer Thread 1
-Partition 1 -> Consumer Thread 2
-Partition 2 -> Consumer Thread 3
-```
-
-### Fault Recovery
-
-Offsets are persisted to disk, enabling consumers to resume processing after failures.
-
----
-
-## Project Structure
-
-```text
-mini-kafka/
-
-├── broker/
-│   ├── broker.py
-│   ├── topic_manager.py
-│   ├── partition.py
-│   ├── storage.py
-│   ├── offset_manager.py
-│   └── group_manager.py
-│
-├── producer/
-│   └── producer.py
-│
-├── consumer/
-│   └── consumer.py
-│
-├── benchmark/
-│   └── benchmark.py
-│
-├── data/
-│   └── topics/
-│
-├── offsets/
-│   └── consumer_offsets.json
-│
-├── tests/
-│   └── test_broker.py
-│
-├── requirements.txt
-└── README.md
-```
-
----
-
-## Message Flow
-
-### Producing Messages
-
-```text
-Producer
-   |
-   v
-Broker
-   |
-   v
-Topic Partition
-   |
-   v
-Append to Log
-```
-
-### Consuming Messages
-
-```text
-Consumer
-   |
-Read Offset
-   |
-Read Messages
-   |
-Process Messages
-   |
-Commit Offset
-```
-
----
-
-## Storage Format
-
-Messages are stored as JSON Lines.
-
-```json
-{"offset":0,"timestamp":"2026-01-01T10:00:00","message":"hello"}
-{"offset":1,"timestamp":"2026-01-01T10:00:01","message":"world"}
-```
-
-Advantages:
-
-* Human-readable
-* Easy debugging
-* Efficient sequential reads
-* Supports replay
-
----
-
-## Benchmarking
-
-The project includes benchmarking tools to simulate real-world workloads.
-
-Metrics:
-
-* Throughput (messages/sec)
-* Consumer Lag
-* Processing Latency
-* Partition Distribution
-* Resource Utilization
-
-Example:
+## Quick Start
 
 ```bash
-python benchmark/benchmark.py
+git clone <repo-url>
+cd mini_kafka
+docker compose up --build
 ```
 
----
+The broker listens on `localhost:9092`.
 
-## Technology Stack
+## Local Development
 
-* Python 3.11+
-* Socket Programming
-* Threading
-* Concurrent Futures
-* JSON
-* File-Based Storage
-* Pytest
+Run the broker without Docker:
 
----
+```bash
+python -m broker
+```
 
-## Learning Outcomes
-
-This project demonstrates practical understanding of:
-
-* Distributed Systems Fundamentals
-* Event Streaming Architectures
-* Message Queues
-* Concurrent Programming
-* Log-Based Storage Systems
-* Fault Tolerance Mechanisms
-* Consumer Group Coordination
-* System Performance Analysis
-
----
-
-## Future Enhancements
-
-* Broker Replication
-* Leader-Follower Architecture
-* Distributed Brokers
-* Raft-Based Consensus
-* Message Compression
-* Retention Policies
-* Dead Letter Queues
-* Web Dashboard
-* Prometheus Metrics
-* Docker Deployment
-
-## Dashboard
-
-Run the live recruiter-facing dashboard with:
+Run the dashboard:
 
 ```bash
 python -m dashboard --broker-port 9092 --port 8000
 ```
 
-Then open `http://localhost:8000` to view:
+Run a benchmark:
 
-* Topic and partition layout
-* Current offsets and consumer groups
-* Sample messages per partition
-* A metrics snapshot for the broker
+```bash
+python -m benchmark baseline
+```
 
----
+## Example Usage
 
-## Inspiration
+Producer:
 
-This project is inspired by Apache Kafka and is intended as an educational implementation to understand the internal mechanics of modern event streaming platforms.
+```python
+from client.kafka_client import KafkaClient
+from producer.producer import Producer
+
+client = KafkaClient(port=9092)
+producer = Producer(client)
+client.create_topic("orders", 3)
+producer.send("orders", "order-1", {"event": "OrderCreated"})
+client.close()
+```
+
+Consumer:
+
+```python
+from client.kafka_client import KafkaClient
+from consumer.consumer import Consumer
+
+client = KafkaClient(port=9092)
+consumer = Consumer(client, group_id="orders-group", consumer_id="consumer-a", topic="orders")
+consumer.join_group()
+records = consumer.poll(batch_size=10)
+consumer.leave_group()
+client.close()
+```
+
+## Benchmarks
+
+Published benchmark evidence is available in [docs/benchmark_results.md](docs/benchmark_results.md).
+
+Measured scenarios:
+
+- 1 producer, 1 consumer, 10,000 messages
+- 5 producers, 5 consumers, 50,000 messages
+- 10 producers, 20 consumers, 100,000 messages
+- 20 producers, 20 consumers, 16 partitions, 100,000 messages
+
+## Engineering Metrics
+
+- Unit tests: `pytest`
+- Integration tests: TCP networking tests
+- Benchmark results: `docs/benchmark_results.md`
+- Architecture diagrams: `docs/diagrams/`
+- Docker support: `Dockerfile` and `docker-compose.yml`
+
+## Project Structure
+
+```text
+mini_kafka/
+├── benchmark/
+├── broker/
+├── client/
+├── consumer/
+├── dashboard/
+├── docs/
+├── examples/
+├── network/
+├── producer/
+├── tests/
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
+```
+
+## Future Work
+
+- Broker replication
+- Leader election
+- Multi-broker clusters
+- Raft-based consensus
+- Message compression
+- Retention policies
+- Dead-letter queues
+
+## Resume Value
+
+This project is designed to be easy to explain in interviews. It shows distributed systems thinking, backend engineering fundamentals, test coverage, operational visibility, and deployment readiness.
+

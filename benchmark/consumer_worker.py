@@ -12,13 +12,25 @@ class ConsumerWorker(threading.Thread):
         self.batch_size = batch_size
         self.metrics = metrics
         self.target_messages = target_messages
+        self.heartbeat_interval = 1.0
 
     def run(self):
         client = self.client_factory()
+        heartbeat_stop = threading.Event()
+        heartbeat_thread = None
+
+        def send_heartbeats():
+            while not heartbeat_stop.wait(self.heartbeat_interval):
+                response = client.heartbeat(self.group_id, self.consumer_id)
+                if response.get("status") != "success":
+                    break
+
         try:
             join = client.join_group(self.group_id, self.consumer_id, self.topic)
             if join.get("status") != "success":
                 raise RuntimeError(join)
+            heartbeat_thread = threading.Thread(target=send_heartbeats, daemon=True)
+            heartbeat_thread.start()
             while True:
                 response = client.consume_assigned(self.group_id, self.consumer_id, self.batch_size)
                 if response.get("status") != "success":
@@ -42,6 +54,9 @@ class ConsumerWorker(threading.Thread):
                         committed_offset,
                     )
         finally:
+            heartbeat_stop.set()
+            if heartbeat_thread is not None:
+                heartbeat_thread.join(timeout=2)
             try:
                 client.leave_group(self.group_id, self.consumer_id)
             finally:
