@@ -90,5 +90,18 @@ class KafkaClient:
             }
         )
 
+    def heartbeat(self, group_id, consumer_id):
+        return self._request(
+            {
+                "version": 1,
+                "type": "heartbeat",
+                "group_id": group_id,
+                "consumer_id": consumer_id,
+            }
+        )
+
+    def group_state(self, group_id):
+        return self._request({"version": 1, "type": "group_state", "group_id": group_id})
+
     def metrics(self):
         return self._request({"version": 1, "type": "metrics"})

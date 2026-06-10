@@ -68,6 +68,12 @@ class Broker:
     def consume_assigned(self, group_id, consumer_id, batch_size):
         return self.group_manager.consume_assigned(group_id, consumer_id, batch_size)
 
+    def heartbeat(self, group_id, consumer_id):
+        return self.group_manager.heartbeat(group_id, consumer_id)
+
+    def group_state(self, group_id):
+        return self.group_manager.group_state(group_id)
+
     def metrics(self):
         topics = len(self.topics)
         partitions = sum(len(topic.partitions) for topic in self.topics.values())

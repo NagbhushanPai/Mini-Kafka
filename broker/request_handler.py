@@ -63,6 +63,12 @@ class RequestHandler:
                 result = self.broker.consume_assigned(request["group_id"], request["consumer_id"], request["batch_size"])
                 return result
 
+            if request_type == "heartbeat":
+                return self.broker.heartbeat(request["group_id"], request["consumer_id"])
+
+            if request_type == "group_state":
+                return self.broker.group_state(request["group_id"])
+
             if request_type == "metrics":
                 return self.broker.metrics()
 

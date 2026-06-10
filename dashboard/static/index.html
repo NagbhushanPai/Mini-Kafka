@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini Kafka Dashboard</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Recruiter demo surface</p>
+          <h1>Mini Kafka observability dashboard</h1>
+          <p class="lede">
+            A clean, story-driven view of your streaming system: producers, partitions, offsets, consumer groups, and message flow.
+          </p>
+        </div>
+        <div class="hero-card">
+          <span class="status-dot"></span>
+          <div>
+            <p class="label">Live broker</p>
+            <p id="connectionState" class="value">Connecting...</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="kpis" id="kpis"></section>
+
+      <section class="panel-grid">
+        <article class="panel wide">
+          <div class="panel-head">
+            <div>
+              <p class="label">Topics</p>
+              <h2>Partition map</h2>
+            </div>
+            <button id="refreshBtn">Refresh</button>
+          </div>
+          <div id="topics" class="topics"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="label">Consumer groups</p>
+              <h2>Offset state</h2>
+            </div>
+          </div>
+          <div id="groups" class="groups"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="label">System metrics</p>
+              <h2>Performance snapshot</h2>
+            </div>
+          </div>
+          <div id="metrics" class="metrics"></div>
+        </article>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
+

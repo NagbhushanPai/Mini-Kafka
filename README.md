@@ -279,6 +279,21 @@ This project demonstrates practical understanding of:
 * Prometheus Metrics
 * Docker Deployment
 
+## Dashboard
+
+Run the live recruiter-facing dashboard with:
+
+```bash
+python -m dashboard --broker-port 9092 --port 8000
+```
+
+Then open `http://localhost:8000` to view:
+
+* Topic and partition layout
+* Current offsets and consumer groups
+* Sample messages per partition
+* A metrics snapshot for the broker
+
 ---
 
 ## Inspiration

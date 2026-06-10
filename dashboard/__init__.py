@@ -1,0 +1,2 @@
+"""Mini Kafka dashboard package."""
+
