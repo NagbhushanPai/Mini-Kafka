@@ -1,15 +1,28 @@
 import socket
 import threading
+import time
 
 from network.protocol import recv_json, send_json
 
 
 class KafkaClient:
-    def __init__(self, host="localhost", port=9092):
+    def __init__(self, host="localhost", port=9092, connect_timeout=5.0, connect_retries=5, retry_delay=0.5):
         self.host = host
         self.port = port
-        self._socket = socket.create_connection((self.host, self.port))
+        self._socket = self._connect(connect_timeout, connect_retries, retry_delay)
         self._lock = threading.Lock()
+
+    def _connect(self, connect_timeout, connect_retries, retry_delay):
+        last_error = None
+        attempts = max(1, connect_retries)
+        for attempt in range(attempts):
+            try:
+                return socket.create_connection((self.host, self.port), timeout=connect_timeout)
+            except OSError as exc:
+                last_error = exc
+                if attempt + 1 < attempts:
+                    time.sleep(retry_delay)
+        raise ConnectionError(f"Unable to connect to broker at {self.host}:{self.port}") from last_error
 
     def close(self):
         if self._socket is not None:

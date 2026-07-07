@@ -1,0 +1,41 @@
+{
+  "avg_e2e_latency_ms": 2280.72824298,
+  "avg_producer_latency_ms": 2.0183613600016543,
+  "broker_metrics": {
+    "active_consumers": 0,
+    "active_groups": 0,
+    "committed_offsets": {},
+    "dead_consumers_detected": 1,
+    "messages_stored": 10000,
+    "partition_offsets": {
+      "benchmark-baseline": {
+        "0": 2489,
+        "1": 2477,
+        "2": 2554,
+        "3": 2480
+      }
+    },
+    "partitions": 4,
+    "status": "success",
+    "topics": 1
+  },
+  "consumer_lag": 2554,
+  "duration_seconds": 29.301964399999633,
+  "max_e2e_latency_ms": 4957.9175,
+  "max_producer_latency_ms": 25.885400000333902,
+  "messages_consumed": 10000,
+  "messages_produced": 10000,
+  "p50_e2e_latency_ms": 2236.8544,
+  "p50_producer_latency_ms": 1.9068999990849989,
+  "p95_e2e_latency_ms": 4397.7921,
+  "p95_producer_latency_ms": 2.5163999998767395,
+  "p99_e2e_latency_ms": 4697.0288,
+  "p99_producer_latency_ms": 5.139799999597017,
+  "partition_counts": {
+    "0": 2489,
+    "1": 2477,
+    "2": 2554,
+    "3": 2480
+  },
+  "throughput": 341.27404782459314
+}
