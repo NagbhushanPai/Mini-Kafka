@@ -113,6 +113,13 @@ class GroupManager:
                     self._rebalance(group_id)
         return changed
 
+    def reset(self):
+        with self.lock:
+            self.groups = {}
+            self.dead_consumers_detected = 0
+            self._persist()
+            return {"status": "success"}
+
     def scan_for_dead_consumers(self):
         with self.lock:
             changed = self._cleanup_dead_groups()

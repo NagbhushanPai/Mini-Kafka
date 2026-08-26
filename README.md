@@ -43,6 +43,25 @@ docker compose up --build
 ```
 
 The broker listens on `localhost:9092`.
+The dashboard is available at [http://localhost:8000](http://localhost:8000).
+
+To stop the services:
+
+```bash
+docker compose down
+```
+
+Broker data is persisted in the local `data/` and `offsets/` directories.
+
+To seed the broker with live traffic for a demo, run:
+
+```bash
+python -m demo
+```
+
+This creates a `demo-events` topic, starts a couple of consumers in a shared group, and streams sample order events so the dashboard has something to show immediately. Options: `--messages`, `--consumers`, `--partitions`, `--delay` (see `python -m demo --help`).
+
+The dashboard's **Reset demo** button archives everything currently in `data/` and `offsets/` into a timestamped snapshot under `sessions/`, then clears the broker so you can re-run the demo cleanly — nothing is deleted, and past runs (including data present before you ever reset) stay browsable from the dashboard's **Previous session results** panel. Benchmark reports in `reports/` are untouched by reset.
 
 ## Local Development
 
@@ -145,4 +164,3 @@ mini_kafka/
 ## Resume Value
 
 This project is designed to be easy to explain in interviews. It shows distributed systems thinking, backend engineering fundamentals, test coverage, operational visibility, and deployment readiness.
-

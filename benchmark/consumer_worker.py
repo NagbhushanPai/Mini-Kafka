@@ -34,6 +34,14 @@ class ConsumerWorker(threading.Thread):
             while True:
                 response = client.consume_assigned(self.group_id, self.consumer_id, self.batch_size)
                 if response.get("status") != "success":
+                    # A concurrent join can trigger a rebalance while this
+                    # worker is polling. Rejoin and continue with its new
+                    # assignment instead of terminating the benchmark.
+                    if response.get("error") == "ConsumerNotFound":
+                        time.sleep(0.05)
+                        join = client.join_group(self.group_id, self.consumer_id, self.topic)
+                        if join.get("status") == "success":
+                            continue
                     raise RuntimeError(response)
                 records = response["records"]
                 if not records:

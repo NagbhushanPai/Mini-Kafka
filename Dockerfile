@@ -7,7 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 9092
+EXPOSE 9092 8000
 
 CMD ["python", "-m", "broker"]
-

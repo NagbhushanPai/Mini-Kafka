@@ -79,6 +79,16 @@ class Broker:
     def group_state(self, group_id):
         return self.group_manager.group_state(group_id)
 
+    def reset(self):
+        for topic in self.topics.values():
+            for partition in topic.partitions:
+                with partition.lock:
+                    os.makedirs(os.path.dirname(partition.log_file_path), exist_ok=True)
+                    open(partition.log_file_path, "w").close()
+                    partition.next_offset = 0
+        self.group_manager.reset()
+        return {"status": "success"}
+
     def metrics(self):
         self.group_manager.scan_for_dead_consumers()
         topics = len(self.topics)

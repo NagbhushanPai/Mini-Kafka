@@ -1,0 +1,19 @@
+{
+  "demo-group": {
+    "assignments": {
+      "0": "demo-consumer-1",
+      "1": "demo-consumer-2",
+      "2": "demo-consumer-1"
+    },
+    "heartbeats": {
+      "demo-consumer-1": 1787750054.8155243,
+      "demo-consumer-2": 1787750054.8315587
+    },
+    "members": [
+      "demo-consumer-1",
+      "demo-consumer-2"
+    ],
+    "offsets": {},
+    "topic": "demo-events"
+  }
+}

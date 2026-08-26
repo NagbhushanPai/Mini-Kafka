@@ -72,6 +72,9 @@ class RequestHandler:
             if request_type == "metrics":
                 return self.broker.metrics()
 
+            if request_type == "reset":
+                return self.broker.reset()
+
             return self._error("InvalidRequest", "Unknown request type")
         except KeyError:
             return self._error("InvalidRequest", "Missing required fields")

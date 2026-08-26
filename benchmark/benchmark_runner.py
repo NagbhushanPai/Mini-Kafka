@@ -9,15 +9,17 @@ from .scenarios import SCENARIOS
 
 
 class BenchmarkRunner:
-    def __init__(self, client_factory, reports_dir="reports", logger=None):
+    def __init__(self, client_factory, reports_dir="reports", logger=None, progress_callback=None):
         self.client_factory = client_factory
         self.reports_dir = reports_dir
         self.logger = logger or logging.getLogger("mini_kafka.benchmark")
+        self.progress_callback = progress_callback or (lambda *_args, **_kwargs: None)
 
     def run(self, scenario_name):
         scenario = SCENARIOS[scenario_name]
         metrics = MetricsCollector()
         metrics.start()
+        self.progress_callback("starting", "Connecting to broker", 0, scenario["messages"])
         self.logger.info("Benchmark started")
         self.logger.info("Producers launched: %s", scenario["producers"])
         self.logger.info("Consumers launched: %s", scenario["consumers"])
@@ -26,10 +28,11 @@ class BenchmarkRunner:
         topic = f"benchmark-{scenario_name}"
         try:
             response = client.create_topic(topic, scenario["partitions"])
-            if response.get("status") != "success":
+            if response.get("status") != "success" and response.get("error") != "TopicAlreadyExists":
                 raise RuntimeError(response)
         finally:
             client.close()
+        self.progress_callback("setup", "Benchmark topic created", 0, scenario["messages"])
 
         messages_per_producer = scenario["messages"] // scenario["producers"]
         producer_workers = [
@@ -51,10 +54,13 @@ class BenchmarkRunner:
 
         for worker in consumer_workers:
             worker.start()
+        self.progress_callback("running", f"Started {scenario['consumers']} consumers", 0, scenario["messages"])
         for worker in producer_workers:
             worker.start()
+        self.progress_callback("running", f"Started {scenario['producers']} producers", 0, scenario["messages"])
         for worker in producer_workers:
             worker.join()
+        self.progress_callback("running", "Producers finished; consumers are draining messages", metrics.messages_produced, scenario["messages"])
         for worker in consumer_workers:
             worker.join()
 
@@ -63,6 +69,7 @@ class BenchmarkRunner:
         broker_metrics = self._broker_metrics()
         report["broker_metrics"] = broker_metrics
         report["consumer_lag"] = self._consumer_lag(broker_metrics, topic, f"{topic}-group")
+        self.progress_callback("complete", "Benchmark complete", report["messages_produced"], scenario["messages"], report)
         self._save_report(report)
         self.logger.info("Messages produced: %s", report["messages_produced"])
         self.logger.info("Throughput: %.2f msg/sec", report["throughput"])

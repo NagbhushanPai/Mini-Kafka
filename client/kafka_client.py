@@ -118,3 +118,6 @@ class KafkaClient:
 
     def metrics(self):
         return self._request({"version": 1, "type": "metrics"})
+
+    def reset(self):
+        return self._request({"version": 1, "type": "reset"})

@@ -1,0 +1,417 @@
+{
+  "session_id": "20260826-131927-faa6ef",
+  "archived_at": "2026-08-26T13:19:29",
+  "topics": [
+    {
+      "name": "benchmark-baseline",
+      "partitions": [
+        {
+          "partition_id": 0,
+          "message_count": 2489,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "3e87c541-25ef-48df-b0d1-353993e4e3ce",
+              "value": {
+                "message_id": "3e87c541-25ef-48df-b0d1-353993e4e3ce",
+                "timestamp": 1783411338178556500,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "9b723d00-5ba6-455f-9b35-2040ef2153e4",
+              "value": {
+                "message_id": "9b723d00-5ba6-455f-9b35-2040ef2153e4",
+                "timestamp": 1783411338183565900,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 2,
+              "key": "81f00911-3c9e-44bc-bfcf-ca14d1017600",
+              "value": {
+                "message_id": "81f00911-3c9e-44bc-bfcf-ca14d1017600",
+                "timestamp": 1783411338187742700,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 3,
+              "key": "6b024e92-7262-4b6f-87c6-6679275867c1",
+              "value": {
+                "message_id": "6b024e92-7262-4b6f-87c6-6679275867c1",
+                "timestamp": 1783411338201745300,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 4,
+              "key": "2f46bdfc-6c3a-4012-b3ae-fe24cdc6fb14",
+              "value": {
+                "message_id": "2f46bdfc-6c3a-4012-b3ae-fe24cdc6fb14",
+                "timestamp": 1783411338210847400,
+                "payload": "benchmark-data"
+              }
+            }
+          ]
+        },
+        {
+          "partition_id": 1,
+          "message_count": 2477,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "0c4d7e97-309e-4d33-98e2-583f4f7112b0",
+              "value": {
+                "message_id": "0c4d7e97-309e-4d33-98e2-583f4f7112b0",
+                "timestamp": 1783411338174558800,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "d7148d4a-5c25-4fa5-a00f-2cddbe04d76d",
+              "value": {
+                "message_id": "d7148d4a-5c25-4fa5-a00f-2cddbe04d76d",
+                "timestamp": 1783411338186738500,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 2,
+              "key": "dedffe75-f256-46d2-9d06-02d77cac782c",
+              "value": {
+                "message_id": "dedffe75-f256-46d2-9d06-02d77cac782c",
+                "timestamp": 1783411338191858700,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 3,
+              "key": "191d0a6d-06f1-443a-bfb2-ac10f196d72e",
+              "value": {
+                "message_id": "191d0a6d-06f1-443a-bfb2-ac10f196d72e",
+                "timestamp": 1783411338193348200,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 4,
+              "key": "28e08171-bb7b-4fde-ad45-ba65e42017ef",
+              "value": {
+                "message_id": "28e08171-bb7b-4fde-ad45-ba65e42017ef",
+                "timestamp": 1783411338197363700,
+                "payload": "benchmark-data"
+              }
+            }
+          ]
+        },
+        {
+          "partition_id": 2,
+          "message_count": 2554,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "44b6a6ed-f2e7-4f9c-8448-1b50b29ae493",
+              "value": {
+                "message_id": "44b6a6ed-f2e7-4f9c-8448-1b50b29ae493",
+                "timestamp": 1783411338167558900,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "c87a70dd-4f3a-4f79-8a1a-ffdc2221e9bb",
+              "value": {
+                "message_id": "c87a70dd-4f3a-4f79-8a1a-ffdc2221e9bb",
+                "timestamp": 1783411338171557900,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 2,
+              "key": "5af132b2-a90e-4831-9b9e-42a8c2d582e3",
+              "value": {
+                "message_id": "5af132b2-a90e-4831-9b9e-42a8c2d582e3",
+                "timestamp": 1783411338172558800,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 3,
+              "key": "82674eb5-b9c5-47d2-9f4a-e017d1ff5cf5",
+              "value": {
+                "message_id": "82674eb5-b9c5-47d2-9f4a-e017d1ff5cf5",
+                "timestamp": 1783411338176559100,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 4,
+              "key": "0f05a41e-5472-44a8-8d7e-91b23bba892f",
+              "value": {
+                "message_id": "0f05a41e-5472-44a8-8d7e-91b23bba892f",
+                "timestamp": 1783411338180559400,
+                "payload": "benchmark-data"
+              }
+            }
+          ]
+        },
+        {
+          "partition_id": 3,
+          "message_count": 2480,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "143c2a08-56e5-415b-ab23-7831bf027abe",
+              "value": {
+                "message_id": "143c2a08-56e5-415b-ab23-7831bf027abe",
+                "timestamp": 1783411338149199300,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "f6b86904-82f9-4a99-a499-020d461163b7",
+              "value": {
+                "message_id": "f6b86904-82f9-4a99-a499-020d461163b7",
+                "timestamp": 1783411338169556100,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 2,
+              "key": "75f6f4b8-090e-4cf0-8f71-ea1f3132fcaa",
+              "value": {
+                "message_id": "75f6f4b8-090e-4cf0-8f71-ea1f3132fcaa",
+                "timestamp": 1783411338189736600,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 3,
+              "key": "ade537e0-f4fb-4e57-ae0d-bb78774eb30f",
+              "value": {
+                "message_id": "ade537e0-f4fb-4e57-ae0d-bb78774eb30f",
+                "timestamp": 1783411338199719600,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 4,
+              "key": "bbd2fea9-d591-4360-a195-5bffdaba83de",
+              "value": {
+                "message_id": "bbd2fea9-d591-4360-a195-5bffdaba83de",
+                "timestamp": 1783411338204770500,
+                "payload": "benchmark-data"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "benchmark-moderate",
+      "partitions": []
+    },
+    {
+      "name": "benchmark-partition_stress",
+      "partitions": []
+    },
+    {
+      "name": "demo-events",
+      "partitions": [
+        {
+          "partition_id": 0,
+          "message_count": 12,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "order-3",
+              "value": {
+                "event": "PaymentReceived",
+                "order_id": "order-3",
+                "amount": 125.09
+              }
+            },
+            {
+              "offset": 1,
+              "key": "order-5",
+              "value": {
+                "event": "PaymentReceived",
+                "order_id": "order-5",
+                "amount": 63.23
+              }
+            },
+            {
+              "offset": 2,
+              "key": "order-6",
+              "value": {
+                "event": "InventoryUpdated",
+                "order_id": "order-6",
+                "amount": 35.08
+              }
+            },
+            {
+              "offset": 3,
+              "key": "order-7",
+              "value": {
+                "event": "OrderCancelled",
+                "order_id": "order-7",
+                "amount": 164.82
+              }
+            },
+            {
+              "offset": 4,
+              "key": "order-10",
+              "value": {
+                "event": "OrderCreated",
+                "order_id": "order-10",
+                "amount": 175.76
+              }
+            }
+          ]
+        },
+        {
+          "partition_id": 1,
+          "message_count": 17,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "order-1",
+              "value": {
+                "event": "OrderShipped",
+                "order_id": "order-1",
+                "amount": 179.15
+              }
+            },
+            {
+              "offset": 1,
+              "key": "order-9",
+              "value": {
+                "event": "OrderCancelled",
+                "order_id": "order-9",
+                "amount": 205.27
+              }
+            },
+            {
+              "offset": 2,
+              "key": "order-11",
+              "value": {
+                "event": "OrderCreated",
+                "order_id": "order-11",
+                "amount": 40.1
+              }
+            },
+            {
+              "offset": 3,
+              "key": "order-12",
+              "value": {
+                "event": "PaymentReceived",
+                "order_id": "order-12",
+                "amount": 113.04
+              }
+            },
+            {
+              "offset": 4,
+              "key": "order-16",
+              "value": {
+                "event": "PaymentReceived",
+                "order_id": "order-16",
+                "amount": 107.58
+              }
+            }
+          ]
+        },
+        {
+          "partition_id": 2,
+          "message_count": 11,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "order-2",
+              "value": {
+                "event": "InventoryUpdated",
+                "order_id": "order-2",
+                "amount": 152.87
+              }
+            },
+            {
+              "offset": 1,
+              "key": "order-4",
+              "value": {
+                "event": "PaymentReceived",
+                "order_id": "order-4",
+                "amount": 164.05
+              }
+            },
+            {
+              "offset": 2,
+              "key": "order-8",
+              "value": {
+                "event": "OrderShipped",
+                "order_id": "order-8",
+                "amount": 231.72
+              }
+            },
+            {
+              "offset": 3,
+              "key": "order-14",
+              "value": {
+                "event": "OrderShipped",
+                "order_id": "order-14",
+                "amount": 61.28
+              }
+            },
+            {
+              "offset": 4,
+              "key": "order-15",
+              "value": {
+                "event": "InventoryUpdated",
+                "order_id": "order-15",
+                "amount": 224.69
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "orders",
+      "partitions": []
+    },
+    {
+      "name": "orders-ui",
+      "partitions": [
+        {
+          "partition_id": 1,
+          "message_count": 2,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "order-1",
+              "value": {
+                "event": "OrderCreated",
+                "customer": "alice"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "order-1",
+              "value": {
+                "event": "OrderCreated",
+                "customer": "alice"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "orders-ui-2",
+      "partitions": []
+    }
+  ],
+  "total_messages": 10042
+}

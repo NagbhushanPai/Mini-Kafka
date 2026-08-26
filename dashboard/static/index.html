@@ -12,10 +12,10 @@
     <main class="shell">
       <section class="hero">
         <div>
-          <p class="eyebrow">Recruiter demo surface</p>
+          <p class="eyebrow">Distributed systems demo</p>
           <h1>Mini Kafka observability dashboard</h1>
           <p class="lede">
-            A clean, story-driven view of your streaming system: producers, partitions, offsets, consumer groups, and message flow.
+            Watch how events are written to partitions, assigned to consumer groups, and consumed with offset tracking in real time.
           </p>
         </div>
         <div class="hero-card">
@@ -27,7 +27,92 @@
         </div>
       </section>
 
+      <section class="panel reset-panel">
+        <div class="panel-head">
+          <div>
+            <p class="label">Demo control</p>
+            <h2>Reset live state</h2>
+            <p class="muted">Archives every topic, message, and offset into a session snapshot, then clears the broker for a fresh run. Nothing is deleted — previous snapshots stay browsable below.</p>
+          </div>
+          <button id="resetBtn">Reset demo</button>
+        </div>
+        <div id="resetStatus" class="sample"></div>
+      </section>
+
+      <section id="systemNarrative" class="story-grid" aria-live="polite"></section>
       <section class="kpis" id="kpis"></section>
+
+      <section class="panel benchmark-panel">
+        <div class="panel-head">
+          <div>
+            <p class="label">Benchmark lab</p>
+            <h2>Run a guided performance test</h2>
+            <p class="muted">Choose a workload and watch the broker fan out writes across partitions and consumer groups.</p>
+          </div>
+          <button id="runBenchmark">Run scenario</button>
+        </div>
+        <select id="benchmarkScenario"><option value="baseline">Loading scenarios...</option></select>
+        <div id="benchmarkStatus" class="sample">Ready to run.</div>
+        <progress id="benchmarkProgress" value="0" max="100"></progress>
+        <pre id="benchmarkReport" class="sample"></pre>
+      </section>
+
+      <section class="panel-grid controls">
+        <article class="panel">
+          <p class="label">Topics</p>
+          <h2>Create topic</h2>
+          <form id="topicForm">
+            <input name="name" placeholder="orders" required />
+            <input name="partitions" type="number" min="1" value="3" required />
+            <button>Create</button>
+          </form>
+        </article>
+
+        <article class="panel">
+          <p class="label">Producer</p>
+          <h2>Publish message</h2>
+          <form id="messageForm">
+            <input name="topic" placeholder="orders" required />
+            <input name="key" placeholder="order-1" />
+            <textarea name="value" placeholder='{"event":"OrderCreated"}' required></textarea>
+            <button>Publish</button>
+          </form>
+        </article>
+
+        <article class="panel">
+          <p class="label">Consumer group</p>
+          <h2>Join, poll, leave</h2>
+          <form id="groupForm">
+            <input name="group_id" placeholder="orders-group" required />
+            <input name="consumer_id" placeholder="dashboard-user" required />
+            <input name="topic" placeholder="orders" required />
+            <input name="batch_size" type="number" min="1" value="10" />
+            <div class="button-row">
+              <button type="button" data-action="join">Join</button>
+              <button type="button" data-action="poll">Poll</button>
+              <button type="button" data-action="leave">Leave</button>
+            </div>
+          </form>
+          <pre id="actionResult" class="sample">Run a producer or join a consumer group to see the broker respond here.</pre>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="label">Message browser</p>
+            <h2>Browse messages</h2>
+          </div>
+          <button id="browseBtn">Load</button>
+        </div>
+        <div class="inline-form">
+          <input id="browseTopic" placeholder="topic" />
+          <input id="browsePartition" type="number" min="0" value="0" />
+          <input id="browseOffset" type="number" min="0" value="0" />
+          <input id="browseLimit" type="number" min="1" value="20" />
+        </div>
+        <pre id="messages" class="sample">Select a topic and offset to inspect the log stream.</pre>
+      </section>
 
       <section class="panel-grid">
         <article class="panel wide">
@@ -61,8 +146,20 @@
           <div id="metrics" class="metrics"></div>
         </article>
       </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="label">History</p>
+            <h2>Previous session results</h2>
+            <p class="muted">Snapshots captured automatically each time the demo is reset.</p>
+          </div>
+          <button id="refreshSessionsBtn">Refresh</button>
+        </div>
+        <div id="sessionList" class="sessions"></div>
+        <div id="sessionDetail" class="sample"></div>
+      </section>
     </main>
     <script src="/app.js"></script>
   </body>
 </html>
-
