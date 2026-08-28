@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import threading
 
 from .consumer_worker import ConsumerWorker
 from .metrics import MetricsCollector
@@ -15,8 +16,9 @@ class BenchmarkRunner:
         self.logger = logger or logging.getLogger("mini_kafka.benchmark")
         self.progress_callback = progress_callback or (lambda *_args, **_kwargs: None)
 
-    def run(self, scenario_name):
+    def run(self, scenario_name, stop_event=None):
         scenario = SCENARIOS[scenario_name]
+        stop_event = stop_event if stop_event is not None else threading.Event()
         metrics = MetricsCollector()
         metrics.start()
         self.progress_callback("starting", "Connecting to broker", 0, scenario["messages"])
@@ -34,9 +36,12 @@ class BenchmarkRunner:
             client.close()
         self.progress_callback("setup", "Benchmark topic created", 0, scenario["messages"])
 
+        if stop_event.is_set():
+            return self._cancelled(metrics, scenario)
+
         messages_per_producer = scenario["messages"] // scenario["producers"]
         producer_workers = [
-            ProducerWorker(self.client_factory, topic, messages_per_producer, idx, metrics)
+            ProducerWorker(self.client_factory, topic, messages_per_producer, idx, metrics, stop_event=stop_event)
             for idx in range(scenario["producers"])
         ]
         consumer_workers = [
@@ -48,6 +53,7 @@ class BenchmarkRunner:
                 100,
                 metrics,
                 scenario["messages"],
+                stop_event=stop_event,
             )
             for idx in range(scenario["consumers"])
         ]
@@ -58,13 +64,25 @@ class BenchmarkRunner:
         for worker in producer_workers:
             worker.start()
         self.progress_callback("running", f"Started {scenario['producers']} producers", 0, scenario["messages"])
-        for worker in producer_workers:
-            worker.join()
-        self.progress_callback("running", "Producers finished; consumers are draining messages", metrics.messages_produced, scenario["messages"])
-        for worker in consumer_workers:
-            worker.join()
+
+        self._await_workers(
+            producer_workers, lambda: f"Producing messages ({metrics.messages_produced}/{scenario['messages']} written)", metrics, scenario,
+        )
+        self.progress_callback(
+            "running",
+            "Cancelling: waiting for consumers to stop" if stop_event.is_set() else "Producers finished; consumers are draining messages",
+            metrics.messages_produced,
+            scenario["messages"],
+        )
+        self._await_workers(
+            consumer_workers, lambda: f"Consuming messages ({metrics.messages_consumed}/{scenario['messages']} read)", metrics, scenario,
+        )
 
         metrics.stop()
+
+        if stop_event.is_set():
+            return self._cancelled(metrics, scenario)
+
         report = metrics.summary()
         broker_metrics = self._broker_metrics()
         report["broker_metrics"] = broker_metrics
@@ -75,6 +93,18 @@ class BenchmarkRunner:
         self.logger.info("Throughput: %.2f msg/sec", report["throughput"])
         self.logger.info("Benchmark completed")
         return report
+
+    def _await_workers(self, workers, message_fn, metrics, scenario):
+        while any(worker.is_alive() for worker in workers):
+            for worker in workers:
+                worker.join(timeout=0.25)
+            self.progress_callback("running", message_fn(), metrics.messages_produced, scenario["messages"])
+
+    def _cancelled(self, metrics, scenario):
+        metrics.stop()
+        self.progress_callback("cancelled", "Benchmark cancelled", metrics.messages_produced, scenario["messages"])
+        self.logger.info("Benchmark cancelled")
+        return None
 
     def _broker_metrics(self):
         client = self.client_factory()

@@ -1,0 +1,23 @@
+{
+  "benchmark-baseline-group": {
+    "assignments": {
+      "0": "consumer-0",
+      "1": "consumer-0",
+      "2": "consumer-0",
+      "3": "consumer-0"
+    },
+    "heartbeats": {
+      "consumer-0": 1787839792.512643
+    },
+    "members": [
+      "consumer-0"
+    ],
+    "offsets": {
+      "benchmark-baseline-0": 362,
+      "benchmark-baseline-1": 300,
+      "benchmark-baseline-2": 300,
+      "benchmark-baseline-3": 300
+    },
+    "topic": "benchmark-baseline"
+  }
+}

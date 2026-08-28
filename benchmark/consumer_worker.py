@@ -3,7 +3,7 @@ import time
 
 
 class ConsumerWorker(threading.Thread):
-    def __init__(self, client_factory, group_id, consumer_id, topic, batch_size, metrics, target_messages):
+    def __init__(self, client_factory, group_id, consumer_id, topic, batch_size, metrics, target_messages, stop_event=None):
         super().__init__(daemon=True)
         self.client_factory = client_factory
         self.group_id = group_id
@@ -12,6 +12,7 @@ class ConsumerWorker(threading.Thread):
         self.batch_size = batch_size
         self.metrics = metrics
         self.target_messages = target_messages
+        self.stop_event = stop_event
         self.heartbeat_interval = 1.0
 
     def run(self):
@@ -32,6 +33,8 @@ class ConsumerWorker(threading.Thread):
             heartbeat_thread = threading.Thread(target=send_heartbeats, daemon=True)
             heartbeat_thread.start()
             while True:
+                if self.stop_event is not None and self.stop_event.is_set():
+                    break
                 response = client.consume_assigned(self.group_id, self.consumer_id, self.batch_size)
                 if response.get("status") != "success":
                     # A concurrent join can trigger a rebalance while this

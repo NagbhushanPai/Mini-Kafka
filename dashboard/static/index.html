@@ -17,15 +17,18 @@
           <p class="lede">
             Watch how events are written to partitions, assigned to consumer groups, and consumed with offset tracking in real time.
           </p>
+          <a class="how-it-works-link" href="/how-it-works.html">See how it works, animated →</a>
         </div>
         <div class="hero-card">
-          <span class="status-dot"></span>
+          <span id="statusDot" class="status-dot"></span>
           <div>
             <p class="label">Live broker</p>
             <p id="connectionState" class="value">Connecting...</p>
+            <p id="lastUpdated" class="muted tiny">Auto-refreshes every 5s</p>
           </div>
         </div>
       </section>
+      <p class="hint">This dashboard talks to a real broker over the network — every card below is live state, not mock data. Poke a form, watch the numbers move.</p>
 
       <section class="panel reset-panel">
         <div class="panel-head">
@@ -49,11 +52,19 @@
             <h2>Run a guided performance test</h2>
             <p class="muted">Choose a workload and watch the broker fan out writes across partitions and consumer groups.</p>
           </div>
-          <button id="runBenchmark">Run scenario</button>
+          <div class="button-row">
+            <button id="runBenchmark">Run scenario</button>
+            <button id="cancelBenchmark" class="cancel-btn" disabled>Reset</button>
+          </div>
         </div>
         <select id="benchmarkScenario"><option value="baseline">Loading scenarios...</option></select>
-        <div id="benchmarkStatus" class="sample">Ready to run.</div>
-        <progress id="benchmarkProgress" value="0" max="100"></progress>
+        <p class="hint">Bigger workloads spin up more producer/consumer threads at once — a good way to see partitions and rebalancing under real load. "Run scenario" locks while a test is in flight; "Reset" stops it early.</p>
+        <div class="status-row">
+          <span id="benchmarkStageBadge" class="stage-badge stage-idle">Idle</span>
+          <div id="benchmarkStatus" class="sample">Ready to run.</div>
+        </div>
+        <div class="progress-track"><div id="benchmarkProgressFill" class="progress-fill"></div></div>
+        <div id="benchmarkDetails" class="metrics"></div>
         <pre id="benchmarkReport" class="sample"></pre>
       </section>
 
@@ -61,6 +72,7 @@
         <article class="panel">
           <p class="label">Topics</p>
           <h2>Create topic</h2>
+          <p class="hint">A topic is a named log split into partitions. More partitions means more parallel readers and writers.</p>
           <form id="topicForm">
             <input name="name" placeholder="orders" required />
             <input name="partitions" type="number" min="1" value="3" required />
@@ -71,6 +83,7 @@
         <article class="panel">
           <p class="label">Producer</p>
           <h2>Publish message</h2>
+          <p class="hint">Sends one event straight to the broker. Leave key blank to let the broker pick a partition round-robin.</p>
           <form id="messageForm">
             <input name="topic" placeholder="orders" required />
             <input name="key" placeholder="order-1" />
@@ -82,6 +95,7 @@
         <article class="panel">
           <p class="label">Consumer group</p>
           <h2>Join, poll, leave</h2>
+          <p class="hint">Join assigns you a slice of partitions, Poll reads and commits your next batch, Leave frees your partitions for a rebalance.</p>
           <form id="groupForm">
             <input name="group_id" placeholder="orders-group" required />
             <input name="consumer_id" placeholder="dashboard-user" required />
@@ -102,6 +116,7 @@
           <div>
             <p class="label">Message browser</p>
             <h2>Browse messages</h2>
+            <p class="hint">Reads directly from a partition's log at a given offset — exactly what a consumer would fetch.</p>
           </div>
           <button id="browseBtn">Load</button>
         </div>
@@ -120,6 +135,7 @@
             <div>
               <p class="label">Topics</p>
               <h2>Partition map</h2>
+              <p class="hint">Live view of every partition and the newest messages sitting in its log. Updates automatically.</p>
             </div>
             <button id="refreshBtn">Refresh</button>
           </div>
@@ -131,6 +147,7 @@
             <div>
               <p class="label">Consumer groups</p>
               <h2>Offset state</h2>
+              <p class="hint">The last offset each group has committed per partition — how far along its readers are.</p>
             </div>
           </div>
           <div id="groups" class="groups"></div>
@@ -141,6 +158,7 @@
             <div>
               <p class="label">System metrics</p>
               <h2>Performance snapshot</h2>
+              <p class="hint">Rolling latency and throughput since the broker started, refreshed every few seconds.</p>
             </div>
           </div>
           <div id="metrics" class="metrics"></div>

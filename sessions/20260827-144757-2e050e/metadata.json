@@ -1,0 +1,460 @@
+{
+  "session_id": "20260827-144757-2e050e",
+  "archived_at": "2026-08-27T14:47:58",
+  "topics": [
+    {
+      "name": "benchmark-baseline",
+      "partitions": [
+        {
+          "partition_id": 0,
+          "message_count": 0,
+          "sample_messages": []
+        },
+        {
+          "partition_id": 1,
+          "message_count": 0,
+          "sample_messages": []
+        },
+        {
+          "partition_id": 2,
+          "message_count": 0,
+          "sample_messages": []
+        },
+        {
+          "partition_id": 3,
+          "message_count": 0,
+          "sample_messages": []
+        }
+      ]
+    },
+    {
+      "name": "benchmark-moderate",
+      "partitions": [
+        {
+          "partition_id": 0,
+          "message_count": 71,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "9a7af575-51cf-4cf8-8f9a-effa9a3aa7e8",
+              "value": {
+                "message_id": "9a7af575-51cf-4cf8-8f9a-effa9a3aa7e8",
+                "timestamp": 1787841337334405531,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "697a40bc-cf09-40e6-b210-97f2746a0e92",
+              "value": {
+                "message_id": "697a40bc-cf09-40e6-b210-97f2746a0e92",
+                "timestamp": 1787841337342414948,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 2,
+              "key": "3a6352e4-3e18-4b59-9d5e-19ab86cbae24",
+              "value": {
+                "message_id": "3a6352e4-3e18-4b59-9d5e-19ab86cbae24",
+                "timestamp": 1787841337347553820,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 3,
+              "key": "5bca808c-1d45-4756-b4a3-51c8b4862b9e",
+              "value": {
+                "message_id": "5bca808c-1d45-4756-b4a3-51c8b4862b9e",
+                "timestamp": 1787841337377533362,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 4,
+              "key": "6548cf3e-d4e3-4913-aaaa-594e372c58ce",
+              "value": {
+                "message_id": "6548cf3e-d4e3-4913-aaaa-594e372c58ce",
+                "timestamp": 1787841337384073870,
+                "payload": "benchmark-data"
+              }
+            }
+          ]
+        },
+        {
+          "partition_id": 1,
+          "message_count": 62,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "8f8d765e-f09e-435e-88df-c97fdfc3f458",
+              "value": {
+                "message_id": "8f8d765e-f09e-435e-88df-c97fdfc3f458",
+                "timestamp": 1787841337280152540,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "40535861-0434-43b4-8267-82659d70ad32",
+              "value": {
+                "message_id": "40535861-0434-43b4-8267-82659d70ad32",
+                "timestamp": 1787841337368525626,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 2,
+              "key": "a654918a-a28f-4c7a-9f62-615ac45c81da",
+              "value": {
+                "message_id": "a654918a-a28f-4c7a-9f62-615ac45c81da",
+                "timestamp": 1787841337391996380,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 3,
+              "key": "f2f837a5-a71a-4d71-bc7f-de38dac7b4e8",
+              "value": {
+                "message_id": "f2f837a5-a71a-4d71-bc7f-de38dac7b4e8",
+                "timestamp": 1787841337439984813,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 4,
+              "key": "a9450d07-ddc6-48d7-bd06-0d521286af0e",
+              "value": {
+                "message_id": "a9450d07-ddc6-48d7-bd06-0d521286af0e",
+                "timestamp": 1787841337521138895,
+                "payload": "benchmark-data"
+              }
+            }
+          ]
+        },
+        {
+          "partition_id": 2,
+          "message_count": 64,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "31763006-5407-49dc-8765-629d218ee58e",
+              "value": {
+                "message_id": "31763006-5407-49dc-8765-629d218ee58e",
+                "timestamp": 1787841337272062757,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "8be1e64e-3d07-4890-b036-cb75ae704444",
+              "value": {
+                "message_id": "8be1e64e-3d07-4890-b036-cb75ae704444",
+                "timestamp": 1787841337283695953,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 2,
+              "key": "76a1ba4e-c7cd-41a3-8c92-466e57cc0d5d",
+              "value": {
+                "message_id": "76a1ba4e-c7cd-41a3-8c92-466e57cc0d5d",
+                "timestamp": 1787841337287922661,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 3,
+              "key": "3080b0cb-329b-4ef9-9c9b-1fa77ab74f94",
+              "value": {
+                "message_id": "3080b0cb-329b-4ef9-9c9b-1fa77ab74f94",
+                "timestamp": 1787841337301956179,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 4,
+              "key": "2d1ad50b-673e-4e5c-8998-1ec1df4d0c59",
+              "value": {
+                "message_id": "2d1ad50b-673e-4e5c-8998-1ec1df4d0c59",
+                "timestamp": 1787841337409733783,
+                "payload": "benchmark-data"
+              }
+            }
+          ]
+        },
+        {
+          "partition_id": 3,
+          "message_count": 62,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "071d7430-0530-4b2f-a6ec-a7be84dc9809",
+              "value": {
+                "message_id": "071d7430-0530-4b2f-a6ec-a7be84dc9809",
+                "timestamp": 1787841337272456140,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "7c5161f9-3e12-4b89-9f8e-8efa673a6025",
+              "value": {
+                "message_id": "7c5161f9-3e12-4b89-9f8e-8efa673a6025",
+                "timestamp": 1787841337273139982,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 2,
+              "key": "2106c142-6edb-4f21-8b12-da1076adbf24",
+              "value": {
+                "message_id": "2106c142-6edb-4f21-8b12-da1076adbf24",
+                "timestamp": 1787841337281696004,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 3,
+              "key": "f14182a1-77d8-483e-954e-f91cc1debc61",
+              "value": {
+                "message_id": "f14182a1-77d8-483e-954e-f91cc1debc61",
+                "timestamp": 1787841337302849488,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 4,
+              "key": "b2ee099d-ae8e-4fa1-998a-e75bb37c1fd5",
+              "value": {
+                "message_id": "b2ee099d-ae8e-4fa1-998a-e75bb37c1fd5",
+                "timestamp": 1787841337372819974,
+                "payload": "benchmark-data"
+              }
+            }
+          ]
+        },
+        {
+          "partition_id": 4,
+          "message_count": 78,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "40a755e0-e094-40a3-bacc-2c12dc242535",
+              "value": {
+                "message_id": "40a755e0-e094-40a3-bacc-2c12dc242535",
+                "timestamp": 1787841337303072121,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "3511215f-e25f-44d7-93c5-385591d1fac9",
+              "value": {
+                "message_id": "3511215f-e25f-44d7-93c5-385591d1fac9",
+                "timestamp": 1787841337313930904,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 2,
+              "key": "3171a0c2-1efe-4e44-a8da-e14797c6c48c",
+              "value": {
+                "message_id": "3171a0c2-1efe-4e44-a8da-e14797c6c48c",
+                "timestamp": 1787841337412915837,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 3,
+              "key": "f7cd7166-83e9-4fd7-b896-6eb5042b3d59",
+              "value": {
+                "message_id": "f7cd7166-83e9-4fd7-b896-6eb5042b3d59",
+                "timestamp": 1787841337416346460,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 4,
+              "key": "63f1b25e-65dd-41e3-9ba1-e4aaa4990279",
+              "value": {
+                "message_id": "63f1b25e-65dd-41e3-9ba1-e4aaa4990279",
+                "timestamp": 1787841337448573710,
+                "payload": "benchmark-data"
+              }
+            }
+          ]
+        },
+        {
+          "partition_id": 5,
+          "message_count": 56,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "7259050a-f2fe-4427-a7ba-a1e8781c95c1",
+              "value": {
+                "message_id": "7259050a-f2fe-4427-a7ba-a1e8781c95c1",
+                "timestamp": 1787841337326178474,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "9fb5fde6-54fe-49cd-b4ba-00add5443e46",
+              "value": {
+                "message_id": "9fb5fde6-54fe-49cd-b4ba-00add5443e46",
+                "timestamp": 1787841337362953177,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 2,
+              "key": "c17a0c00-8989-498b-82d3-1454793afc55",
+              "value": {
+                "message_id": "c17a0c00-8989-498b-82d3-1454793afc55",
+                "timestamp": 1787841337401185518,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 3,
+              "key": "cde99e6c-eeb3-422e-90b9-a8a3ce3cb6eb",
+              "value": {
+                "message_id": "cde99e6c-eeb3-422e-90b9-a8a3ce3cb6eb",
+                "timestamp": 1787841337487969609,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 4,
+              "key": "cdacb04f-1f31-4e63-b97b-81bf6b34669c",
+              "value": {
+                "message_id": "cdacb04f-1f31-4e63-b97b-81bf6b34669c",
+                "timestamp": 1787841337550263295,
+                "payload": "benchmark-data"
+              }
+            }
+          ]
+        },
+        {
+          "partition_id": 6,
+          "message_count": 73,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "218a15f8-f527-4f65-a47d-b84b7b190201",
+              "value": {
+                "message_id": "218a15f8-f527-4f65-a47d-b84b7b190201",
+                "timestamp": 1787841337269687350,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "f0c31c18-7e92-49ef-bc99-404a061049fd",
+              "value": {
+                "message_id": "f0c31c18-7e92-49ef-bc99-404a061049fd",
+                "timestamp": 1787841337270228092,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 2,
+              "key": "320d569a-6f7b-4df2-89db-3b56c59a0571",
+              "value": {
+                "message_id": "320d569a-6f7b-4df2-89db-3b56c59a0571",
+                "timestamp": 1787841337328558926,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 3,
+              "key": "3cdf02eb-e551-4a57-bdd4-8976327debfb",
+              "value": {
+                "message_id": "3cdf02eb-e551-4a57-bdd4-8976327debfb",
+                "timestamp": 1787841337337995526,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 4,
+              "key": "b8103835-d113-403f-b879-ce13e46f70b6",
+              "value": {
+                "message_id": "b8103835-d113-403f-b879-ce13e46f70b6",
+                "timestamp": 1787841337338290439,
+                "payload": "benchmark-data"
+              }
+            }
+          ]
+        },
+        {
+          "partition_id": 7,
+          "message_count": 69,
+          "sample_messages": [
+            {
+              "offset": 0,
+              "key": "60845b16-e79a-4bf4-88fc-30a7c94daf72",
+              "value": {
+                "message_id": "60845b16-e79a-4bf4-88fc-30a7c94daf72",
+                "timestamp": 1787841337349417000,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 1,
+              "key": "f88e7b71-9929-4be7-ac60-38e04b55130a",
+              "value": {
+                "message_id": "f88e7b71-9929-4be7-ac60-38e04b55130a",
+                "timestamp": 1787841337357493597,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 2,
+              "key": "3a37f08e-e966-4144-9560-1829a7258343",
+              "value": {
+                "message_id": "3a37f08e-e966-4144-9560-1829a7258343",
+                "timestamp": 1787841337383765335,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 3,
+              "key": "d4232a4a-3503-4312-9d6f-6839909a3ddf",
+              "value": {
+                "message_id": "d4232a4a-3503-4312-9d6f-6839909a3ddf",
+                "timestamp": 1787841337445668749,
+                "payload": "benchmark-data"
+              }
+            },
+            {
+              "offset": 4,
+              "key": "2b481816-62b9-48c3-bbf8-8d6c8cbac594",
+              "value": {
+                "message_id": "2b481816-62b9-48c3-bbf8-8d6c8cbac594",
+                "timestamp": 1787841337533422261,
+                "payload": "benchmark-data"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "orders-ui",
+      "partitions": [
+        {
+          "partition_id": 0,
+          "message_count": 0,
+          "sample_messages": []
+        },
+        {
+          "partition_id": 1,
+          "message_count": 0,
+          "sample_messages": []
+        }
+      ]
+    }
+  ],
+  "total_messages": 535
+}

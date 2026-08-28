@@ -36,7 +36,15 @@ class DashboardAPI:
 
     def start_benchmark(self, scenario):
         job_id = str(uuid.uuid4())
-        job = {"id": job_id, "status": "queued", "message": "Waiting to start", "progress": 0, "total": SCENARIOS[scenario]["messages"]}
+        stop_event = threading.Event()
+        job = {
+            "id": job_id,
+            "status": "queued",
+            "message": "Waiting to start",
+            "progress": 0,
+            "total": SCENARIOS[scenario]["messages"],
+            "_stop_event": stop_event,
+        }
         BENCHMARK_JOBS[job_id] = job
         def run():
             try:
@@ -44,11 +52,26 @@ class DashboardAPI:
                     job.update({"status": status, "message": message, "current": current, "total": total, "progress": round(current / total * 100, 1) if total else 0})
                     if report is not None: job["report"] = report
                 runner = BenchmarkRunner(lambda: self._client(), progress_callback=progress)
-                runner.run(scenario)
+                runner.run(scenario, stop_event=stop_event)
             except Exception as exc:
-                job.update({"status": "error", "message": str(exc)})
+                if not stop_event.is_set():
+                    job.update({"status": "error", "message": str(exc)})
         threading.Thread(target=run, daemon=True).start()
-        return job
+        return self.public_job(job)
+
+    def cancel_benchmark(self, job_id):
+        job = BENCHMARK_JOBS.get(job_id)
+        if job is None:
+            return None
+        if job["status"] not in ("complete", "error", "cancelled"):
+            job["_stop_event"].set()
+            job["status"] = "cancelling"
+            job["message"] = "Cancelling..."
+        return self.public_job(job)
+
+    @staticmethod
+    def public_job(job):
+        return {key: value for key, value in job.items() if not key.startswith("_")}
 
     def snapshot(self):
         client = self._client()
@@ -159,11 +182,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         if parsed.path.startswith("/api/benchmarks/"):
             job = BENCHMARK_JOBS.get(parsed.path.rsplit("/", 1)[-1])
-            self._send_json(job or {"status": "error", "message": "Benchmark not found"}, HTTPStatus.OK if job else HTTPStatus.NOT_FOUND)
+            self._send_json(self.api.public_job(job) if job else {"status": "error", "message": "Benchmark not found"}, HTTPStatus.OK if job else HTTPStatus.NOT_FOUND)
             return
 
         if parsed.path in ("/", "/index.html"):
             self._send_file(os.path.join(self.root_dir, "index.html"), "text/html; charset=utf-8")
+            return
+        if parsed.path in ("/how-it-works", "/how-it-works.html"):
+            self._send_file(os.path.join(self.root_dir, "how-it-works.html"), "text/html; charset=utf-8")
             return
         if parsed.path == "/styles.css":
             self._send_file(os.path.join(self.root_dir, "styles.css"), "text/css; charset=utf-8")
@@ -171,10 +197,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if parsed.path == "/app.js":
             self._send_file(os.path.join(self.root_dir, "app.js"), "application/javascript; charset=utf-8")
             return
+        if parsed.path == "/how-it-works.js":
+            self._send_file(os.path.join(self.root_dir, "how-it-works.js"), "application/javascript; charset=utf-8")
+            return
 
         self.send_error(HTTPStatus.NOT_FOUND)
 
     def do_POST(self):
+        if self.path.startswith("/api/benchmarks/") and self.path.endswith("/cancel"):
+            job_id = self.path[len("/api/benchmarks/"):-len("/cancel")].rstrip("/")
+            result = self.api.cancel_benchmark(job_id)
+            self._send_json(result or {"status": "error", "message": "Benchmark not found"}, HTTPStatus.OK if result else HTTPStatus.NOT_FOUND)
+            return
         try:
             length = int(self.headers.get("Content-Length", 0))
             payload = json.loads(self.rfile.read(length) or b"{}")

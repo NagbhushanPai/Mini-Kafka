@@ -4,7 +4,7 @@ import uuid
 
 
 class ProducerWorker(threading.Thread):
-    def __init__(self, client_factory, topic, total_messages, worker_id, metrics, partition_hint=None):
+    def __init__(self, client_factory, topic, total_messages, worker_id, metrics, partition_hint=None, stop_event=None):
         super().__init__(daemon=True)
         self.client_factory = client_factory
         self.topic = topic
@@ -12,11 +12,14 @@ class ProducerWorker(threading.Thread):
         self.worker_id = worker_id
         self.metrics = metrics
         self.partition_hint = partition_hint
+        self.stop_event = stop_event
 
     def run(self):
         client = self.client_factory()
         try:
             for _ in range(self.total_messages):
+                if self.stop_event is not None and self.stop_event.is_set():
+                    break
                 message_id = str(uuid.uuid4())
                 started = time.perf_counter()
                 response = client.produce(

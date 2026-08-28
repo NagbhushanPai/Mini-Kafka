@@ -58,9 +58,18 @@ function renderNarrative(metrics, topics) {
   `;
 }
 
+function flash(id) {
+  const el = document.getElementById(id);
+  el.classList.remove("refreshed");
+  void el.offsetWidth;
+  el.classList.add("refreshed");
+}
+
 function render(snapshot) {
   const { metrics = {}, topics = [] } = snapshot;
   document.getElementById("connectionState").textContent = "Connected";
+  document.getElementById("statusDot").classList.remove("offline");
+  document.getElementById("lastUpdated").textContent = `Last updated ${new Date().toLocaleTimeString()}`;
   renderNarrative(metrics, topics);
 
   document.getElementById("kpis").innerHTML = kpiDefs.map(([key, label]) => `
@@ -69,6 +78,7 @@ function render(snapshot) {
       <div class="num">${fmt(metrics[key])}</div>
     </article>
   `).join("");
+  flash("kpis");
 
   document.getElementById("topics").innerHTML = topics.map((topic) => `
     <article class="topic-card">
@@ -112,16 +122,19 @@ function render(snapshot) {
       <div class="value">${typeof value === "number" ? fmt(Number(value.toFixed(2))) : escapeHtml(value ?? "—")}</div>
     </div>
   `).join("");
+  flash("metrics");
+  flash("topics");
+  flash("groups");
 }
 
 async function refresh() {
-  const state = document.getElementById("connectionState");
-  state.textContent = "Refreshing...";
   try {
     const snapshot = await loadSnapshot();
     render(snapshot);
   } catch (error) {
-    state.textContent = "Broker unavailable";
+    document.getElementById("connectionState").textContent = "Broker unavailable";
+    document.getElementById("statusDot").classList.add("offline");
+    document.getElementById("lastUpdated").textContent = `Last attempt failed at ${new Date().toLocaleTimeString()}`;
     document.getElementById("topics").innerHTML = `<p class="muted">Could not load live data: ${escapeHtml(error.message)}</p>`;
     document.getElementById("groups").innerHTML = `<p class="muted">Consumer group state is unavailable while the broker is offline.</p>`;
     document.getElementById("metrics").innerHTML = `<div class="metric-row"><div class="muted">Status</div><div class="value">Offline</div></div>`;
@@ -142,26 +155,84 @@ async function loadBenchmarkScenarios() {
   }
 }
 
+const BENCHMARK_STAGE_LABELS = {
+  queued: "Queued",
+  starting: "Starting",
+  setup: "Setting up",
+  running: "Running",
+  cancelling: "Cancelling",
+  cancelled: "Cancelled",
+  complete: "Complete",
+  error: "Error",
+};
+
+let activeBenchmarkId = null;
+
+function setBenchmarkRunning(running) {
+  document.getElementById("runBenchmark").disabled = running;
+  document.getElementById("cancelBenchmark").disabled = !running;
+  document.getElementById("benchmarkScenario").disabled = running;
+}
+
+function renderBenchmarkStage(status) {
+  const badge = document.getElementById("benchmarkStageBadge");
+  badge.textContent = BENCHMARK_STAGE_LABELS[status] || status;
+  badge.className = `stage-badge stage-${status}`;
+}
+
+function renderBenchmarkDetails(job) {
+  const rows = [
+    ["Messages", `${fmt(job.current || 0)} / ${fmt(job.total || 0)}`],
+  ];
+  if (job.report) {
+    rows.push(
+      ["Throughput", `${fmt(Number((job.report.throughput || 0).toFixed(2)))} msg/sec`],
+      ["Avg producer latency ms", fmt(Number((job.report.avg_producer_latency_ms || 0).toFixed(2)))],
+      ["Avg end-to-end latency ms", fmt(Number((job.report.avg_e2e_latency_ms || 0).toFixed(2)))],
+      ["Consumer lag", fmt(job.report.consumer_lag || 0)],
+      ["Duration", `${Number((job.report.duration_seconds || 0).toFixed(2))}s`],
+    );
+  }
+  document.getElementById("benchmarkDetails").innerHTML = rows.map(([label, value]) => `
+    <div class="metric-row">
+      <div class="muted">${label}</div>
+      <div class="value">${escapeHtml(String(value))}</div>
+    </div>
+  `).join("");
+}
+
 async function watchBenchmark(id) {
   try {
     const job = await (await fetch(`/api/benchmarks/${id}`)).json();
     document.getElementById("benchmarkStatus").textContent = `${job.message} (${job.progress || 0}%)`;
-    document.getElementById("benchmarkProgress").value = job.progress || 0;
+    const fill = document.getElementById("benchmarkProgressFill");
+    fill.style.width = `${job.progress || 0}%`;
+    fill.classList.toggle("running", !["complete", "error", "cancelled"].includes(job.status));
+    renderBenchmarkStage(job.status);
+    renderBenchmarkDetails(job);
     if (job.report) {
       document.getElementById("benchmarkReport").textContent = JSON.stringify(job.report, null, 2);
     }
-    if (!["complete", "error"].includes(job.status)) {
-      setTimeout(() => watchBenchmark(id), 1000);
+    if (!["complete", "error", "cancelled"].includes(job.status)) {
+      setTimeout(() => watchBenchmark(id), 750);
+    } else {
+      activeBenchmarkId = null;
+      setBenchmarkRunning(false);
     }
   } catch (error) {
     document.getElementById("benchmarkStatus").textContent = error.message;
+    renderBenchmarkStage("error");
+    activeBenchmarkId = null;
+    setBenchmarkRunning(false);
   }
 }
 
 document.getElementById("runBenchmark").addEventListener("click", async () => {
-  const button = document.getElementById("runBenchmark");
-  button.disabled = true;
+  setBenchmarkRunning(true);
   document.getElementById("benchmarkReport").textContent = "";
+  document.getElementById("benchmarkDetails").innerHTML = "";
+  renderBenchmarkStage("queued");
+  document.getElementById("benchmarkProgressFill").style.width = "0%";
   try {
     const payload = { scenario: document.getElementById("benchmarkScenario").value };
     const response = await fetch("/api/benchmarks/run", {
@@ -173,13 +244,24 @@ document.getElementById("runBenchmark").addEventListener("click", async () => {
     if (!response.ok || data.status === "error") {
       throw new Error(data.message || "Benchmark submission failed");
     }
+    activeBenchmarkId = data.id;
     watchBenchmark(data.id);
   } catch (error) {
     document.getElementById("benchmarkStatus").textContent = error.message;
-  } finally {
-    setTimeout(() => {
-      button.disabled = false;
-    }, 1500);
+    renderBenchmarkStage("error");
+    setBenchmarkRunning(false);
+  }
+});
+
+document.getElementById("cancelBenchmark").addEventListener("click", async () => {
+  if (!activeBenchmarkId) return;
+  const button = document.getElementById("cancelBenchmark");
+  button.disabled = true;
+  renderBenchmarkStage("cancelling");
+  try {
+    await fetch(`/api/benchmarks/${activeBenchmarkId}/cancel`, { method: "POST" });
+  } catch (error) {
+    document.getElementById("benchmarkStatus").textContent = error.message;
   }
 });
 
