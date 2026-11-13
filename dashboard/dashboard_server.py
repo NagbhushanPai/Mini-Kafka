@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import threading
+import time
 import uuid
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -13,6 +14,7 @@ from benchmark.scenarios import SCENARIOS
 from dashboard.sessions import SessionStore
 
 BENCHMARK_JOBS = {}
+SAMPLE_SIZE = 5
 
 
 class DashboardAPI:
@@ -21,9 +23,67 @@ class DashboardAPI:
         self.port = port
         self.data_dir = data_dir
         self.sessions = SessionStore(data_dir=data_dir, offsets_file=offsets_file, sessions_dir=sessions_dir)
+        # Consumers joined from the dashboard UI. A human clicks Poll far less often
+        # than the broker's heartbeat timeout, so the dashboard heartbeats for them.
+        self._ui_members = set()
+        self._ui_members_lock = threading.Lock()
+        self._heartbeat_thread = None
 
     def _client(self):
         return KafkaClient(host=self.host, port=self.port)
+
+    def track_ui_member(self, group_id, consumer_id):
+        with self._ui_members_lock:
+            self._ui_members.add((group_id, consumer_id))
+            if self._heartbeat_thread is None or not self._heartbeat_thread.is_alive():
+                self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
+                self._heartbeat_thread.start()
+
+    def untrack_ui_member(self, group_id, consumer_id):
+        with self._ui_members_lock:
+            self._ui_members.discard((group_id, consumer_id))
+
+    def _heartbeat_loop(self, interval=1.5):
+        while True:
+            time.sleep(interval)
+            with self._ui_members_lock:
+                members = list(self._ui_members)
+            if not members:
+                continue
+            try:
+                client = self._client()
+            except ConnectionError:
+                continue
+            try:
+                for group_id, consumer_id in members:
+                    try:
+                        result = client.heartbeat(group_id, consumer_id)
+                    except ConnectionError:
+                        raise
+                    except Exception:
+                        result = {"status": "error"}
+                    if result.get("status") != "success":
+                        # Group/member is gone (reset, evicted, left elsewhere): stop beating.
+                        self.untrack_ui_member(group_id, consumer_id)
+            except ConnectionError:
+                pass
+            finally:
+                client.close()
+
+    def poll_and_commit(self, client, group_id, consumer_id, batch_size):
+        result = client.consume_assigned(group_id, consumer_id, batch_size)
+        if result.get("status") == "success":
+            topic = None
+            next_offsets = {}
+            for record in result.get("records", []):
+                next_offsets[record["partition"]] = max(next_offsets.get(record["partition"], 0), record["offset"] + 1)
+            if next_offsets:
+                topic = client.metrics().get("groups", {}).get(group_id, {}).get("topic")
+            if topic:
+                for partition, offset in next_offsets.items():
+                    client.commit_offset(group_id, topic, partition, offset)
+                result["committed"] = {str(p): o for p, o in next_offsets.items()}
+        return result
 
     def reset(self):
         session = self.sessions.archive_current()
@@ -81,7 +141,9 @@ class DashboardAPI:
             for topic_name, partitions in sorted(metrics.get("partition_offsets", {}).items()):
                 partition_rows = []
                 for partition_id, next_offset in sorted(partitions.items(), key=lambda item: int(item[0])):
-                    payload = client.consume(topic_name, int(partition_id), 0, 5)
+                    # Read the newest messages (tail of the log), not the oldest.
+                    tail_start = max(0, int(next_offset) - SAMPLE_SIZE)
+                    payload = client.consume(topic_name, int(partition_id), tail_start, SAMPLE_SIZE)
                     if isinstance(payload, dict):
                         messages = payload.get("messages", [])
                     else:
@@ -92,7 +154,8 @@ class DashboardAPI:
                         {
                             "partition_id": int(partition_id),
                             "next_offset": int(next_offset),
-                            "message_count": len(messages),
+                            "message_count": int(next_offset),
+                            "sample_count": len(messages),
                             "sample_messages": messages,
                         }
                     )
@@ -236,9 +299,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     result = client.produce(payload["topic"], payload.get("key", ""), value)
                 elif self.path == "/api/groups/join":
                     result = client.join_group(payload["group_id"], payload["consumer_id"], payload["topic"])
+                    if result.get("status") == "success":
+                        self.api.track_ui_member(payload["group_id"], payload["consumer_id"])
                 elif self.path == "/api/groups/poll":
-                    result = client.consume_assigned(payload["group_id"], payload["consumer_id"], int(payload.get("batch_size", 10)))
+                    result = self.api.poll_and_commit(client, payload["group_id"], payload["consumer_id"], int(payload.get("batch_size", 10)))
                 elif self.path == "/api/groups/leave":
+                    self.api.untrack_ui_member(payload["group_id"], payload["consumer_id"])
                     result = client.leave_group(payload["group_id"], payload["consumer_id"])
                 else:
                     self._send_json({"status": "error", "message": "Not found"}, HTTPStatus.NOT_FOUND)

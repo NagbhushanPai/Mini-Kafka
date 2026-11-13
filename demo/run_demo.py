@@ -45,8 +45,12 @@ def run_consumer(consumer_id, host, port, stop_event, poll_delay=0.5):
         while not stop_event.is_set():
             result = consumer.poll(batch_size=5)
             records = result.get("records", []) if isinstance(result, dict) else []
+            next_offsets = {}
             for record in records:
                 log(f"Consumer '{consumer_id}' read partition {record['partition']} offset {record['offset']}: {record['value']}")
+                next_offsets[record["partition"]] = max(next_offsets.get(record["partition"], 0), record["offset"] + 1)
+            for partition, offset in next_offsets.items():
+                client.commit_offset(GROUP_ID, TOPIC, partition, offset)
             time.sleep(poll_delay)
     finally:
         consumer.leave_group()

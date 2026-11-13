@@ -58,6 +58,188 @@ function renderNarrative(metrics, topics) {
   `;
 }
 
+// ---------- Partition log strips ----------
+
+const STRIP_CELLS = 32;      // offsets visible per partition row
+const STRIP_HEADROOM = 4;    // empty slots kept to the right of the log end
+const prevLogEnds = new Map(); // "topic/partition" -> next_offset from previous refresh
+const openDetails = new Set(); // keeps <details> open across re-renders
+
+const PALETTE = ["#67e8f9", "#a78bfa", "#f472b6", "#fbbf24", "#34d399", "#fb923c", "#60a5fa", "#e879f9"];
+
+function colorFor(name) {
+  let hash = 0;
+  for (const ch of String(name)) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return PALETTE[hash % PALETTE.length];
+}
+
+function chip(name, extra = "") {
+  return `<span class="chip" style="--chip:${colorFor(name)}"><i></i>${escapeHtml(name)}${extra}</span>`;
+}
+
+function groupsForTopic(groups, topicName) {
+  return Object.entries(groups || {}).filter(([, g]) => g.topic === topicName);
+}
+
+function committedFor(committedOffsets, groupId, topic, partitionId) {
+  const value = committedOffsets?.[groupId]?.[`${topic}-${partitionId}`];
+  return value === undefined ? 0 : Number(value);
+}
+
+function renderPartitionStrip(topic, partition, topicGroups, committedOffsets) {
+  const pid = partition.partition_id;
+  const end = Number(partition.next_offset);
+  const stripKey = `${topic.name}/${pid}`;
+  const prevEnd = prevLogEnds.get(stripKey);
+  prevLogEnds.set(stripKey, end);
+
+  const windowStart = Math.max(0, end - (STRIP_CELLS - STRIP_HEADROOM));
+  const samples = new Map(normalizeMessages(partition.sample_messages).map((m) => [Number(m.offset), m]));
+
+  const groupStates = topicGroups.map(([groupId, g]) => {
+    const committed = Math.min(committedFor(committedOffsets, groupId, topic.name, pid), end);
+    return { groupId, owner: g.assignments?.[String(pid)] || null, committed, lag: Math.max(0, end - committed) };
+  });
+  const consumedByAll = groupStates.length ? Math.min(...groupStates.map((s) => s.committed)) : 0;
+
+  const cells = [];
+  for (let i = 0; i < STRIP_CELLS; i += 1) {
+    const offset = windowStart + i;
+    const classes = ["cell"];
+    let title = `offset ${offset}`;
+    if (offset < end) {
+      classes.push(offset < consumedByAll ? "consumed" : "stored");
+      if (prevEnd !== undefined && offset >= prevEnd) classes.push("fresh");
+      const msg = samples.get(offset);
+      if (msg) title += ` · key=${msg.key ?? ""} · ${JSON.stringify(msg.value)}`;
+    } else if (offset === end) {
+      classes.push("next");
+      title += " · next write";
+    } else {
+      classes.push("empty");
+    }
+    cells.push(`<span class="${classes.join(" ")}" title="${escapeHtml(title)}"></span>`);
+  }
+
+  const markers = groupStates.map((s, idx) => {
+    const clipped = s.committed < windowStart;
+    const pos = clipped ? 0 : ((s.committed - windowStart) / STRIP_CELLS) * 100;
+    return `<span class="marker${clipped ? " clipped" : ""}" style="left:${pos}%;--chip:${colorFor(s.groupId)};--row:${idx}"
+      title="${escapeHtml(`${s.groupId} committed offset ${s.committed} · lag ${s.lag}`)}"></span>`;
+  }).join("");
+
+  const groupRows = groupStates.map((s) => `
+    <div class="lag-line">
+      ${chip(s.groupId)}
+      <span class="muted">→</span>
+      ${s.owner ? chip(s.owner) : `<span class="muted tiny-inline">unassigned</span>`}
+      <span class="lag ${s.lag === 0 ? "caught-up" : ""}">${s.lag === 0 ? "caught up" : `lag ${fmt(s.lag)}`}</span>
+    </div>
+  `).join("");
+
+  const detailsKey = `samples:${stripKey}`;
+  const sampleList = [...samples.values()].reverse();
+
+  return `
+    <div class="pstrip">
+      <div class="pstrip-head">
+        <strong>P${pid}</strong>
+        <span class="muted">${fmt(end)} message${end === 1 ? "" : "s"}${prevEnd !== undefined && end > prevEnd ? ` <span class="delta">+${fmt(end - prevEnd)}</span>` : ""}</span>
+      </div>
+      <div class="pstrip-track" style="--cells:${STRIP_CELLS};--marker-rows:${Math.max(1, groupStates.length)}">
+        ${cells.join("")}
+        ${markers}
+      </div>
+      <div class="pstrip-axis muted">
+        <span>${windowStart > 0 ? `… ${fmt(windowStart)}` : "0"}</span>
+        <span>next offset ${fmt(end)}</span>
+      </div>
+      ${groupRows}
+      ${sampleList.length ? `
+        <details data-key="${escapeHtml(detailsKey)}" ${openDetails.has(detailsKey) ? "open" : ""}>
+          <summary class="muted">Latest ${sampleList.length} message${sampleList.length === 1 ? "" : "s"}</summary>
+          <table class="msg-table">
+            <thead><tr><th>Offset</th><th>Key</th><th>Value</th></tr></thead>
+            <tbody>${sampleList.map((m) => `
+              <tr><td>${fmt(m.offset)}</td><td>${escapeHtml(m.key ?? "")}</td><td><code>${escapeHtml(JSON.stringify(m.value))}</code></td></tr>
+            `).join("")}</tbody>
+          </table>
+        </details>` : ""}
+    </div>
+  `;
+}
+
+function renderTopics(topics, metrics) {
+  const groups = metrics.groups || {};
+  const committedOffsets = metrics.committed_offsets || {};
+  const legend = `
+    <div class="strip-legend muted">
+      <span><span class="cell stored"></span>stored</span>
+      <span><span class="cell consumed"></span>consumed by every group</span>
+      <span><span class="cell fresh-legend"></span>new since last refresh</span>
+      <span><span class="cell next"></span>next write</span>
+      <span><span class="marker-legend"></span>group's committed offset</span>
+    </div>`;
+
+  const cards = topics.map((topic) => {
+    const topicGroups = groupsForTopic(groups, topic.name);
+    const total = topic.partitions.reduce((sum, p) => sum + Number(p.next_offset), 0);
+    return `
+      <article class="topic-card">
+        <div class="topic-title">
+          <h3>${escapeHtml(topic.name)}</h3>
+          <span class="muted">${topic.partitions.length} partitions · ${fmt(total)} messages${topicGroups.length ? ` · ${topicGroups.length} group${topicGroups.length === 1 ? "" : "s"}` : ""}</span>
+        </div>
+        <div class="partition-list">
+          ${topic.partitions.map((p) => renderPartitionStrip(topic, p, topicGroups, committedOffsets)).join("")}
+        </div>
+      </article>`;
+  }).join("");
+
+  document.getElementById("topics").innerHTML = cards
+    ? legend + cards
+    : `<p class="muted">No topics found yet. Create one and produce a few messages to bring the demo to life.</p>`;
+}
+
+function renderGroups(metrics) {
+  const groups = metrics.groups || {};
+  const committedOffsets = metrics.committed_offsets || {};
+  const partitionOffsets = metrics.partition_offsets || {};
+
+  document.getElementById("groups").innerHTML = Object.entries(groups).map(([groupId, g]) => {
+    const ends = partitionOffsets[g.topic] || {};
+    const rows = Object.keys(ends).sort((a, b) => Number(a) - Number(b)).map((pid) => {
+      const end = Number(ends[pid]);
+      const committed = Math.min(committedFor(committedOffsets, groupId, g.topic, pid), end);
+      const pct = end ? (committed / end) * 100 : 100;
+      const owner = g.assignments?.[String(pid)];
+      return `
+        <div class="offset-row">
+          <span class="muted">P${pid}</span>
+          <div class="offset-bar"><div style="width:${pct}%;background:${colorFor(owner || groupId)}"></div></div>
+          <span class="offset-num">${fmt(committed)} / ${fmt(end)}</span>
+        </div>`;
+    }).join("");
+    const totalLag = Object.keys(ends).reduce((sum, pid) => sum + Math.max(0, Number(ends[pid]) - committedFor(committedOffsets, groupId, g.topic, pid)), 0);
+    return `
+      <div class="group-card">
+        <div class="topic-title">
+          <h3>${chip(groupId)}</h3>
+          <span class="lag ${totalLag === 0 ? "caught-up" : ""}">${totalLag === 0 ? "caught up" : `lag ${fmt(totalLag)}`}</span>
+        </div>
+        <div class="muted tiny">topic <strong>${escapeHtml(g.topic)}</strong> · ${g.members.length} member${g.members.length === 1 ? "" : "s"}</div>
+        <div class="chip-row">${g.members.map((m) => chip(m)).join("") || `<span class="muted">no active members</span>`}</div>
+        ${rows}
+      </div>`;
+  }).join("") || `<p class="muted">No consumer groups are active yet. Join one from the Consumer group panel.</p>`;
+}
+
+document.getElementById("topics").addEventListener("toggle", (event) => {
+  const key = event.target?.dataset?.key;
+  if (!key) return;
+  if (event.target.open) openDetails.add(key); else openDetails.delete(key);
+}, true);
+
 function flash(id) {
   const el = document.getElementById(id);
   el.classList.remove("refreshed");
@@ -80,35 +262,8 @@ function render(snapshot) {
   `).join("");
   flash("kpis");
 
-  document.getElementById("topics").innerHTML = topics.map((topic) => `
-    <article class="topic-card">
-      <div class="topic-title">
-        <h3>${escapeHtml(topic.name)}</h3>
-        <span class="muted">${topic.partitions.length} partitions</span>
-      </div>
-      <div class="partition-list">
-        ${topic.partitions.map((partition) => {
-          const sampleMessages = normalizeMessages(partition.sample_messages);
-          return `
-            <div class="partition-pill">
-              <strong>Partition ${partition.partition_id} — next offset ${fmt(partition.next_offset)}</strong>
-              <div class="muted">${fmt(partition.message_count ?? sampleMessages.length)} sample messages shown</div>
-              <pre class="sample">${escapeHtml(JSON.stringify(sampleMessages, null, 2)) || "[]"}</pre>
-            </div>
-          `;
-        }).join("")}
-      </div>
-    </article>
-  `).join("") || `<p class="muted">No topics found yet. Create one and produce a few messages to bring the demo to life.</p>`;
-
-  const committedOffsets = metrics.committed_offsets || {};
-  document.getElementById("groups").innerHTML = Object.entries(committedOffsets).map(([groupId, offsets]) => `
-    <div class="group-card">
-      <h3>${escapeHtml(groupId)}</h3>
-      <div class="muted">${Object.keys(offsets).length} tracked partitions</div>
-      <pre class="sample">${escapeHtml(JSON.stringify(offsets, null, 2))}</pre>
-    </div>
-  `).join("") || `<p class="muted">No consumer groups are active yet.</p>`;
+  renderTopics(topics, metrics);
+  renderGroups(metrics);
 
   document.getElementById("metrics").innerHTML = [
     ["Throughput", metrics.throughput],
@@ -123,8 +278,6 @@ function render(snapshot) {
     </div>
   `).join("");
   flash("metrics");
-  flash("topics");
-  flash("groups");
 }
 
 async function refresh() {

@@ -3,7 +3,9 @@ import time
 
 
 class Consumer:
-    heartbeat_interval = 5.0
+    # Must be comfortably below the broker's heartbeat timeout (5s by default),
+    # otherwise healthy consumers get evicted between beats.
+    heartbeat_interval = 1.5
 
     def __init__(self, client, group_id, consumer_id, topic, heartbeat_interval=None):
         self.client = client

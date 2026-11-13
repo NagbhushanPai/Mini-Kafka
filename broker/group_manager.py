@@ -186,6 +186,8 @@ class GroupManager:
             group = self._get_group(group_id)
             if consumer_id not in group["members"]:
                 raise ConsumerNotFound(f"Consumer '{consumer_id}' not found in group '{group_id}'")
+            # A poll proves the consumer is alive, so it counts as a heartbeat.
+            group["heartbeats"][consumer_id] = time.time()
             topic = group["topic"]
             assigned = [p for p, owner in group["assignments"].items() if owner == consumer_id]
             records = []

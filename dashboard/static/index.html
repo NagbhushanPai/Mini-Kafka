@@ -135,7 +135,7 @@
             <div>
               <p class="label">Topics</p>
               <h2>Partition map</h2>
-              <p class="hint">Live view of every partition and the newest messages sitting in its log. Updates automatically.</p>
+              <p class="hint">Each row is a partition's append-only log; each square is one offset. Colored ticks mark where each consumer group has committed — the gap to the log end is its lag. Hover a square to see the message.</p>
             </div>
             <button id="refreshBtn">Refresh</button>
           </div>
@@ -147,7 +147,7 @@
             <div>
               <p class="label">Consumer groups</p>
               <h2>Offset state</h2>
-              <p class="hint">The last offset each group has committed per partition — how far along its readers are.</p>
+              <p class="hint">How far each group has read per partition, which member owns it, and how far behind it is.</p>
             </div>
           </div>
           <div id="groups" class="groups"></div>

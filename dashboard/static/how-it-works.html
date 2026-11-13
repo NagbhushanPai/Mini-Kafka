@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>How Mini Kafka Works</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="how-page">
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <main class="shell">
+      <a class="back-link" href="/">← Back to dashboard</a>
+      <section class="how-hero">
+        <p class="eyebrow">The event journey</p>
+        <h1>How Mini Kafka works</h1>
+        <p class="lede">
+          Follow one event from a producer, through a partitioned log, to the consumer group that processes it.
+          The animation pauses at each stage so the moving parts are easy to see.
+        </p>
+      </section>
+
+      <section class="how-demo panel" aria-labelledby="flow-title">
+        <div class="panel-head">
+          <div>
+            <p class="label">Interactive walkthrough</p>
+            <h2 id="flow-title">One message, three responsibilities</h2>
+          </div>
+          <button id="restartFlow" type="button">Replay</button>
+        </div>
+
+        <div class="flow-track" aria-label="Producer to broker to consumer flow">
+          <article class="flow-node" data-step="0">
+            <span class="flow-icon">P</span>
+            <h3>Producer</h3>
+            <p>Sends an event to a topic.</p>
+          </article>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <article class="flow-node" data-step="1">
+            <span class="flow-icon">L</span>
+            <h3>Partitioned log</h3>
+            <p>Appends the event at its next offset.</p>
+          </article>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <article class="flow-node" data-step="2">
+            <span class="flow-icon">C</span>
+            <h3>Consumer group</h3>
+            <p>Reads, processes, and commits progress.</p>
+          </article>
+        </div>
+
+        <div class="flow-message" aria-live="polite">
+          <span id="flowStep" class="stage-badge stage-running">Step 1 of 3</span>
+          <p id="flowDescription">The producer publishes an event to a named topic.</p>
+        </div>
+      </section>
+
+      <section class="how-grid">
+        <article class="panel how-card">
+          <p class="label">01 · Topics</p>
+          <h2>Named streams</h2>
+          <p class="muted">A topic groups related events. Producers write to it and consumers decide when and how to read it.</p>
+        </article>
+        <article class="panel how-card">
+          <p class="label">02 · Partitions</p>
+          <h2>Parallel logs</h2>
+          <p class="muted">Each topic is split into append-only partitions. A key can keep related events together while partitions provide parallelism.</p>
+        </article>
+        <article class="panel how-card">
+          <p class="label">03 · Offsets</p>
+          <h2>Durable progress</h2>
+          <p class="muted">Every record has an offset. Consumer groups commit offsets so they can resume from the right place after a restart.</p>
+        </article>
+      </section>
+
+      <section class="panel how-summary">
+        <p class="label">Try it yourself</p>
+        <h2>Watch the system respond</h2>
+        <p class="muted">Return to the dashboard to create a topic, publish a message, and join a consumer group. The live cards expose each part of this flow over the broker network.</p>
+        <a class="button-link" href="/">Open live dashboard →</a>
+      </section>
+    </main>
+    <script src="/how-it-works.js"></script>
+  </body>
+</html>

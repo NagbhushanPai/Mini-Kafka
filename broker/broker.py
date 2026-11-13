@@ -103,8 +103,15 @@ class Broker:
                 messages_stored += len(partition.read(0, 10**9))
                 partition_offsets[topic.name][partition.partition_id] = partition.next_offset
         committed_offsets = {}
-        for group_id, group in self.group_manager.groups.items():
-            committed_offsets[group_id] = dict(group["offsets"])
+        groups = {}
+        with self.group_manager.lock:
+            for group_id, group in self.group_manager.groups.items():
+                committed_offsets[group_id] = dict(group["offsets"])
+                groups[group_id] = {
+                    "topic": group["topic"],
+                    "members": sorted(group["members"]),
+                    "assignments": {str(p): owner for p, owner in group["assignments"].items()},
+                }
         return {
             "status": "success",
             "topics": topics,
@@ -115,4 +122,5 @@ class Broker:
             "messages_stored": messages_stored,
             "partition_offsets": partition_offsets,
             "committed_offsets": committed_offsets,
+            "groups": groups,
         }
